@@ -1,0 +1,160 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: Firebase UID
+    // Fields:
+    //   - uid: string (required) - User ID
+    //   - email: string (required) - User email
+    //   - role: string (required) - 'admin' | 'volunteer' | 'reporter'
+    //   - name: string (required) - User display name
+    //
+    // Collection: issues
+    // Document ID: Auto-generated
+    // Fields:
+    //   - title: string (required) - Issue title
+    //   - location: string (required) - Human readable location
+    //   - areaId: string (required) - Sector ID
+    //   - peopleAffected: number (required) - Count of affected individuals
+    //   - priority: string (required) - 'HIGH' | 'MED' | 'LOW'
+    //   - category: string (required) - 'FOOD' | 'WATER' | 'MEDICAL' | 'SHELTER' | 'SECURITY'
+    //   - status: string (required) - 'reported' | 'assigned' | 'in-progress' | 'resolved'
+    //   - aiRecommendation: string (optional) - Strategic advice
+    //   - confidence: number (optional) - AI confidence score (0-1)
+    //   - eta: string (optional) - Projected response time
+    //   - riskMessage: string (optional) - Identified risk factor
+    //   - coordinates: map (required) - { lat: number, lng: number }
+    //   - timestamp: string (required) - ISO 8601 timestamp
+    //   - assignedTo: string (optional) - Volunteer UID
+    //   - resolvedBy: string (optional) - Volunteer UID
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (request.auth.token.email.lower() == "luv.sarkari@gmail.com" ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
+    }
+
+    function isVolunteer() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'volunteer';
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // Domain Validators
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'email', 'role', 'name', 'skills', 'bio', 'applicationStatus', 'status', 'activeTaskId', 'coordinates']) &&
+             data.uid is string &&
+             isValidEmail(data.email) &&
+             data.role in ['admin', 'volunteer', 'reporter'] &&
+             data.name is string && data.name.size() < 100 &&
+             (!('skills' in data) || data.skills is list) &&
+             (!('bio' in data) || (data.bio is string && data.bio.size() < 2000)) &&
+             (!('applicationStatus' in data) || data.applicationStatus in ['none', 'pending', 'approved', 'rejected']) &&
+             (!('status' in data) || data.status in ['active', 'standby', 'en-route']) &&
+             (!('activeTaskId' in data) || (data.activeTaskId is string || data.activeTaskId == null)) &&
+             (!('coordinates' in data) || (data.coordinates is map && data.coordinates.lat is number && data.coordinates.lng is number));
+    }
+
+    function isValidApplication(data) {
+      return data.keys().hasAll(['id', 'name', 'email', 'skills', 'bio', 'idProofText', 'status', 'timestamp']) &&
+             data.id == request.auth.uid &&
+             data.email == request.auth.token.email &&
+             data.skills is list &&
+             data.bio is string && data.bio.size() < 2000 &&
+             data.idProofText is string && data.idProofText.size() < 500 &&
+             data.status == 'pending' &&
+             data.timestamp is string;
+    }
+
+    function isValidIssue(data) {
+      return data.keys().hasAll(['title', 'location', 'areaId', 'peopleAffected', 'priority', 'category', 'status', 'coordinates', 'timestamp']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 150 &&
+             data.location is string && data.location.size() < 200 &&
+             data.areaId is string &&
+             data.peopleAffected is number && data.peopleAffected >= 0 &&
+             data.priority in ['HIGH', 'MED', 'LOW'] &&
+             data.category in ['FOOD', 'WATER', 'MEDICAL', 'SHELTER', 'SECURITY'] &&
+             data.status in ['reported', 'assigned', 'in-progress', 'resolved'] &&
+             (!('aiRecommendation' in data) || (data.aiRecommendation is string && data.aiRecommendation.size() < 2000)) &&
+             (!('confidence' in data) || (data.confidence is number && data.confidence >= 0 && data.confidence <= 1)) &&
+             (!('riskMessage' in data) || (data.riskMessage is string && data.riskMessage.size() < 1000)) &&
+             data.coordinates is map &&
+             data.coordinates.lat is number &&
+             data.coordinates.lng is number &&
+             data.timestamp is string &&
+             (!('assignedTo' in data) || (data.assignedTo is string)) &&
+             (!('resolvedBy' in data) || (data.resolvedBy is string)) &&
+             data.keys().hasOnly(['id', 'title', 'location', 'areaId', 'peopleAffected', 'priority', 'category', 'status', 'aiRecommendation', 'confidence', 'eta', 'riskMessage', 'coordinates', 'timestamp', 'assignedTo', 'resolvedBy']);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+
+    match /users/{userId} {
+      // Users can read and write their own profile
+      allow get: if isAuthenticated() && isValidId(userId);
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'reporter' || isAdmin());
+      allow update: if isValidId(userId) && ((isOwner(userId) && isValidUser(request.resource.data) && (isAdmin() || request.resource.data.role == resource.data.role)) || isAdmin());
+    }
+
+    match /volunteer_applications/{appId} {
+      allow list: if isAdmin();
+      allow get: if (isAdmin() || isOwner(appId)) && isValidId(appId);
+      allow create: if isOwner(appId) && isValidId(appId) && isValidApplication(request.resource.data);
+      allow delete: if isAdmin() && isValidId(appId);
+    }
+
+    match /issues/{issueId} {
+      allow list: if isAuthenticated();
+      allow get: if isAuthenticated() && isValidId(issueId);
+      
+      // Reporting issues
+      allow create: if isAuthenticated() && isValidId(issueId) && isValidIssue(request.resource.data);
+      
+      // Updating issues
+      allow update: if isAuthenticated() && isValidId(issueId) && isValidIssue(request.resource.data) && (
+        isAdmin() || 
+        // Volunteers can update status of tasks assigned to them
+        (isVolunteer() && (resource.data.assignedTo == request.auth.uid || resource.data.status == 'reported'))
+      );
+      
+      allow delete: if isAdmin() && isValidId(issueId);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

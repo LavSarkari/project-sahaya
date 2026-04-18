@@ -1,0 +1,58 @@
+{
+  "entities": {
+    "Issue": {
+      "title": "Issue",
+      "description": "An emergency issue or help request reported in a specific area.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "location": { "type": "string" },
+        "areaId": { "type": "string" },
+        "peopleAffected": { "type": "number" },
+        "priority": { "type": "string", "enum": ["HIGH", "MED", "LOW"] },
+        "category": { "type": "string", "enum": ["FOOD", "MEDICAL", "WATER", "SHELTER", "SECURITY"] },
+        "aiRecommendation": { "type": "string" },
+        "confidence": { "type": "number" },
+        "eta": { "type": "string" },
+        "riskMessage": { "type": "string" },
+        "coordinates": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["title", "location", "areaId", "peopleAffected", "priority", "category", "coordinates", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/issues/{issueId}": {
+      "schema": "Issue",
+      "description": "Global collection of all emergency issues."
+    },
+    "/users/{userId}": {
+      "schema": {
+        "title": "UserProfile",
+        "type": "object",
+        "properties": {
+          "email": { "type": "string" },
+          "role": { "type": "string", "enum": ["admin", "volunteer", "reporter"] },
+          "name": { "type": "string" },
+          "skills": { "type": "array", "items": { "type": "string" } },
+          "status": { "type": "string", "enum": ["active", "standby", "en-route"] },
+          "activeTaskId": { "type": "string" },
+          "coordinates": {
+            "type": "object",
+            "properties": {
+              "lat": { "type": "number" },
+              "lng": { "type": "number" }
+            }
+          }
+        }
+      },
+      "description": "User profiles including role and operational status."
+    }
+  }
+}

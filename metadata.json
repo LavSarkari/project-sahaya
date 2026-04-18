@@ -1,0 +1,6 @@
+{
+  "name": "Project Sahaya",
+  "description": "An AI-Powered Humanitarian Crisis Management Dashboard focused on real-time monitoring and mission-critical response coordination.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": []
+}
