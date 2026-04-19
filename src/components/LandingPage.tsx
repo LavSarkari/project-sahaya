@@ -31,12 +31,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, theme, o
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute inset-0 bg-[var(--bg)]" />
         {/* Soft elegant radial glowing orbs */}
-        <div className={`absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-[var(--accent)]/10 blur-[120px] transition-opacity duration-1000 ${theme === 'light' ? 'opacity-40' : 'opacity-100'}`} />
-        <div className={`absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-[#00d2ff]/5 blur-[150px] transition-opacity duration-1000 ${theme === 'light' ? 'opacity-30' : 'opacity-100'}`} />
-        <div className={`absolute top-[40%] left-[60%] w-[40vw] h-[40vw] rounded-full bg-emerald-500/5 blur-[120px] transition-opacity duration-1000 ${theme === 'light' ? 'opacity-20' : 'opacity-100'}`} />
+        <div className={`absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-[var(--accent)]/15 blur-[120px] transition-all duration-1000 ${theme === 'light' ? 'opacity-40 scale-110' : 'opacity-100'}`} />
+        <div className={`absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-[#00d2ff]/10 blur-[150px] transition-all duration-1000 ${theme === 'light' ? 'opacity-30 scale-90' : 'opacity-100'}`} />
+        <div className={`absolute top-[40%] left-[60%] w-[40vw] h-[40vw] rounded-full bg-emerald-500/10 blur-[120px] transition-all duration-1000 ${theme === 'light' ? 'opacity-20 translate-x-10' : 'opacity-100'}`} />
         
+        {/* Mesh Gradient for Light Mode */}
+        {theme === 'light' && (
+          <div className="absolute inset-0 bg-gradient-to-tr from-[#007aff]/3 via-transparent to-[#00d2ff]/3 opacity-50" />
+        )}
+
         {/* Grid pattern */}
-        <div className={`absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTAgMGg0MHYxSDB6TTAgMHY0MGgxVDB6IiBmaWxsPSJyZ2JhKDEyOCwxMjgsMTI4LDAuMDUpIi8+Cjwvc3ZnPg==')] ${theme === 'light' ? 'opacity-30' : 'opacity-60'}`} />
+        <div className={`absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CjxwYXRoIGQ9Ik0wIDBoNDB2NDBIMHoiIGZpbGw9Im5vbmUiLz4KPHBhdGggZD0iTTAgMGg0MHYxSDB6TTAgMHY0MGgxVDB6IiBmaWxsPSJyZ2JhKDAsMCwwLDAuMDUpIi8+Cjwvc3ZnPg==')] ${theme === 'light' ? 'opacity-20' : 'opacity-60'}`} />
       </div>
 
       {/* Nav */}
