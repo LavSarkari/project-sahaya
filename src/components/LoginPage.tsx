@@ -1,17 +1,28 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Send, ShieldAlert, LogIn, Activity, FileText, CheckCircle2, AlertCircle, Wrench, Heart } from 'lucide-react';
+import { Send, ShieldAlert, LogIn, Activity, FileText, CheckCircle2, AlertCircle, Wrench, Heart, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, addDoc, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { VolunteerApplication } from '../types';
 
 export const LoginPage: React.FC = () => {
-  const { login, user, profile } = useAuth();
-  const [view, setView] = useState<'welcome' | 'apply'>('welcome');
+  const { login, loginWithEmail, registerWithEmail, user, profile } = useAuth();
+  const [view, setView] = useState<'welcome' | 'auth' | 'apply'>('welcome');
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [applied, setApplied] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Auth form state
+  const [authData, setAuthData] = useState({
+    email: '',
+    password: '',
+    name: '',
+    confirmPassword: ''
+  });
 
   // Application form state
   const [appData, setAppData] = useState({
@@ -36,16 +47,57 @@ export const LoginPage: React.FC = () => {
     }));
   };
 
-  const handleLogin = async () => {
+  const handleGoogleLogin = async () => {
     setIsLoggingIn(true);
-    await login();
+    setAuthError('');
+    try {
+      await login();
+    } catch (err: any) {
+      setAuthError(err?.message || 'Google sign-in failed');
+    }
+    setIsLoggingIn(false);
+  };
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoggingIn(true);
+    setAuthError('');
+
+    try {
+      if (authMode === 'register') {
+        if (authData.password !== authData.confirmPassword) {
+          setAuthError('Passwords do not match');
+          setIsLoggingIn(false);
+          return;
+        }
+        if (authData.password.length < 6) {
+          setAuthError('Password must be at least 6 characters');
+          setIsLoggingIn(false);
+          return;
+        }
+        await registerWithEmail(authData.email, authData.password, authData.name);
+      } else {
+        await loginWithEmail(authData.email, authData.password);
+      }
+    } catch (err: any) {
+      const code = err?.code || '';
+      if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') {
+        setAuthError('Invalid email or password');
+      } else if (code === 'auth/email-already-in-use') {
+        setAuthError('This email is already registered. Sign in instead.');
+      } else if (code === 'auth/weak-password') {
+        setAuthError('Password is too weak (min 6 characters)');
+      } else {
+        setAuthError(err?.message || 'Authentication failed');
+      }
+    }
     setIsLoggingIn(false);
   };
 
   const handleApply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      await handleLogin();
+      setView('auth');
       return;
     }
 
@@ -164,8 +216,7 @@ export const LoginPage: React.FC = () => {
 
                 <div className="space-y-4">
                   <button 
-                    onClick={handleLogin}
-                    disabled={isLoggingIn}
+                    onClick={() => { setAuthMode('login'); setView('auth'); }}
                     className="w-full group relative flex items-center justify-between bg-[var(--surface)] border border-[var(--border)] p-6 rounded-[24px] transition-all hover:shadow-md hover:bg-[var(--hover)] active:scale-[0.98]"
                   >
                     <div className="flex items-center gap-5">
@@ -177,7 +228,7 @@ export const LoginPage: React.FC = () => {
                         <div className="text-xs text-[var(--text-secondary)] font-medium mt-0.5">Report issues and request assistance</div>
                       </div>
                     </div>
-                    <LogIn className={`w-5 h-5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors ${isLoggingIn ? 'animate-spin' : ''}`} />
+                    <LogIn className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
                   </button>
 
                   <button 
@@ -199,14 +250,154 @@ export const LoginPage: React.FC = () => {
 
                 <div className="pt-8 flex items-center justify-center gap-6">
                   <button 
-                    onClick={() => login('admin')}
+                    onClick={() => { setAuthMode('login'); setView('auth'); }}
                     className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                   >
                     Administrator Log In
                   </button>
                 </div>
               </motion.div>
+
+            ) : view === 'auth' ? (
+              /* EMAIL / PASSWORD AUTH VIEW */
+              <motion.div
+                key="auth"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-8"
+              >
+                <div className="space-y-3 lg:text-left text-center">
+                  <h2 className="text-3xl font-bold tracking-tight">
+                    {authMode === 'login' ? 'Sign In' : 'Create Account'}
+                  </h2>
+                  <p className="text-[var(--text-secondary)] text-sm font-medium">
+                    {authMode === 'login' 
+                      ? 'Enter your credentials to access the dashboard' 
+                      : 'Fill in your details to create an account'}
+                  </p>
+                </div>
+
+                <form onSubmit={handleEmailAuth} className="space-y-5">
+                  {authMode === 'register' && (
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-[var(--text-secondary)] block">Full Name</label>
+                      <div className="relative">
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
+                        <input
+                          required
+                          type="text"
+                          value={authData.name}
+                          onChange={e => setAuthData(p => ({ ...p, name: e.target.value }))}
+                          placeholder="John Doe"
+                          className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl p-3.5 pl-11 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/50 focus:border-[var(--accent)] outline-none transition-all shadow-sm"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-[var(--text-secondary)] block">Email Address</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
+                      <input
+                        required
+                        type="email"
+                        value={authData.email}
+                        onChange={e => setAuthData(p => ({ ...p, email: e.target.value }))}
+                        placeholder="you@example.com"
+                        className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl p-3.5 pl-11 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/50 focus:border-[var(--accent)] outline-none transition-all shadow-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-[var(--text-secondary)] block">Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
+                      <input
+                        required
+                        type={showPassword ? 'text' : 'password'}
+                        value={authData.password}
+                        onChange={e => setAuthData(p => ({ ...p, password: e.target.value }))}
+                        placeholder="••••••••"
+                        className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl p-3.5 pl-11 pr-11 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/50 focus:border-[var(--accent)] outline-none transition-all shadow-sm"
+                      />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {authMode === 'register' && (
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-[var(--text-secondary)] block">Confirm Password</label>
+                      <div className="relative">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
+                        <input
+                          required
+                          type={showPassword ? 'text' : 'password'}
+                          value={authData.confirmPassword}
+                          onChange={e => setAuthData(p => ({ ...p, confirmPassword: e.target.value }))}
+                          placeholder="••••••••"
+                          className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-xl p-3.5 pl-11 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/50 focus:border-[var(--accent)] outline-none transition-all shadow-sm"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {authError && (
+                    <div className="flex items-center gap-2 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 text-xs font-bold">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      {authError}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isLoggingIn}
+                    className="w-full bg-[var(--text-primary)] text-[var(--text-inverse)] py-4 rounded-2xl font-bold text-sm hover:opacity-90 active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-3 shadow-md"
+                  >
+                    {isLoggingIn ? <Activity className="w-5 h-5 animate-spin" /> : (authMode === 'login' ? 'Sign In' : 'Create Account')}
+                  </button>
+                </form>
+
+                {/* Divider */}
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 h-px bg-[var(--border)]" />
+                  <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest">or</span>
+                  <div className="flex-1 h-px bg-[var(--border)]" />
+                </div>
+
+                {/* Google Button */}
+                <button
+                  onClick={handleGoogleLogin}
+                  disabled={isLoggingIn}
+                  className="w-full flex items-center justify-center gap-3 bg-[var(--surface)] border border-[var(--border)] py-4 rounded-2xl font-bold text-sm text-[var(--text-primary)] hover:bg-[var(--hover)] active:scale-95 disabled:opacity-50 transition-all shadow-sm"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                  Continue with Google
+                </button>
+
+                {/* Toggle Login / Register */}
+                <div className="text-center">
+                  <button
+                    onClick={() => { setAuthMode(authMode === 'login' ? 'register' : 'login'); setAuthError(''); }}
+                    className="text-xs font-semibold text-[var(--accent)] hover:underline"
+                  >
+                    {authMode === 'login' ? "Don't have an account? Create one" : 'Already have an account? Sign in'}
+                  </button>
+                </div>
+
+                <div className="text-center">
+                  <button onClick={() => setView('welcome')} className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors">
+                    ← Back to options
+                  </button>
+                </div>
+              </motion.div>
+
             ) : (
+              /* VOLUNTEER APPLICATION VIEW */
               <motion.div 
                 key="apply"
                 initial={{ opacity: 0, scale: 0.98 }}
@@ -226,6 +417,14 @@ export const LoginPage: React.FC = () => {
                     Back
                   </button>
                 </div>
+
+                {!user && (
+                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    You must sign in before applying. 
+                    <button onClick={() => setView('auth')} className="underline ml-1">Sign in here</button>
+                  </div>
+                )}
 
                 <form onSubmit={handleApply} className="space-y-8">
                   <div className="space-y-6">
@@ -328,7 +527,7 @@ export const LoginPage: React.FC = () => {
 
                   <button 
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !user}
                     className="w-full bg-[var(--text-primary)] text-[var(--text-inverse)] py-4 rounded-[20px] font-bold text-sm hover:opacity-90 active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-3 shadow-md"
                   >
                     {isSubmitting ? <Activity className="w-5 h-5 animate-spin" /> : 'Submit Application'}
@@ -348,4 +547,3 @@ export const LoginPage: React.FC = () => {
     </div>
   );
 };
-

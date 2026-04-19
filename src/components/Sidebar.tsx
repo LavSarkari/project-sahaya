@@ -1,6 +1,6 @@
 import React from 'react';
 import { Area, Issue } from '../types';
-import { MapPin, LayoutGrid, Users2, FileText, ChevronRight, Circle, Sparkles, Send, AlertTriangle, Users, Droplets, Shield, Heart, Package, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { MapPin, LayoutGrid, Users2, FileText, ChevronRight, Circle, Sparkles, Send, AlertTriangle, Users, Droplets, Shield, Heart, Package, ChevronsLeft, ChevronsRight, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { isAdminEmail } from '../lib/utils';
@@ -8,8 +8,8 @@ import { isAdminEmail } from '../lib/utils';
 interface SidebarProps {
   selectedAreaId: string | null;
   onSelectArea: (id: string | null) => void;
-  activeView: 'overview' | 'team' | 'reports' | 'reporter' | 'tasks';
-  onViewChange: (view: 'overview' | 'team' | 'reports' | 'reporter' | 'tasks') => void;
+  activeView: 'overview' | 'team' | 'reports' | 'reporter' | 'tasks' | 'settings';
+  onViewChange: (view: 'overview' | 'team' | 'reports' | 'reporter' | 'tasks' | 'settings') => void;
   isOpen: boolean;
   onClose: () => void;
   issues: Issue[];
@@ -161,6 +161,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {!collapsed && 'Request Help'}
           </button>
         )}
+
+        <button
+          onClick={() => onViewChange('settings')}
+          title="Account Settings"
+          className={`w-full flex items-center ${collapsed ? 'justify-center' : ''} gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
+            activeView === 'settings' ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)]'
+          }`}
+        >
+          <Settings className="w-4 h-4 shrink-0" />
+          {!collapsed && 'Settings'}
+        </button>
       </div>
 
       <div className="h-px bg-[var(--border)] mx-4 my-1 opacity-50" />

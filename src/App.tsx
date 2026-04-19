@@ -18,13 +18,14 @@ import { LoginPage } from './components/LoginPage';
 import { VolunteerView } from './components/VolunteerView';
 import { PersonnelManager } from './components/PersonnelManager';
 import { LandingPage } from './components/LandingPage';
+import { Settings } from './components/Settings';
 
 export default function App() {
   const { user, profile, loading } = useAuth();
   const [issues, setIssues] = useState<Issue[]>(MOCK_ISSUES);
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
-  const [activeView, setActiveView] = useState<'overview' | 'team' | 'reports' | 'reporter' | 'tasks'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'team' | 'reports' | 'reporter' | 'tasks' | 'settings'>('overview');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(true);
@@ -37,20 +38,45 @@ export default function App() {
     root.classList.add(theme);
   }, [theme]);
 
-  // Sync active view with role on initial login
+  // Sync active view with role on initial login + RBAC enforcement
   React.useEffect(() => {
     if (user || profile) {
       const isAdmin = profile?.role === 'admin' || isAdminEmail(user?.email);
       
       if (isAdmin) {
-        setActiveView('overview');
+        // Admins default to overview, but allow settings
+        if (activeView !== 'settings') setActiveView('overview');
       } else if (profile?.role === 'reporter') {
-        setActiveView('reporter');
+        // Reporters can only see reporter + settings
+        if (activeView !== 'settings') setActiveView('reporter');
       } else if (profile?.role === 'volunteer') {
-        setActiveView('tasks');
+        // Volunteers can only see tasks + settings
+        if (activeView !== 'settings') setActiveView('tasks');
       }
     }
   }, [profile, user]);
+
+  // RBAC: Enforce view restrictions on every view change
+  const handleViewChange = (view: typeof activeView) => {
+    const isAdmin = profile?.role === 'admin' || isAdminEmail(user?.email);
+    
+    // Settings is accessible to everyone
+    if (view === 'settings') {
+      setActiveView(view);
+      return;
+    }
+    
+    // Admin-only views
+    if (['overview', 'team', 'reports'].includes(view) && !isAdmin) {
+      return; // silently block
+    }
+    // Volunteer-only views
+    if (view === 'tasks' && profile?.role !== 'volunteer' && !isAdmin) {
+      return;
+    }
+    
+    setActiveView(view);
+  };
 
   // Map state for smooth panning
   const [mapCenter, setMapCenter] = useState<[number, number]>([26.87, 80.95]);
@@ -193,7 +219,7 @@ export default function App() {
           }}
           activeView={activeView}
           onViewChange={(v) => {
-            setActiveView(v);
+            handleViewChange(v as any);
             setIsSidebarOpen(false);
           }}
           isOpen={isSidebarOpen}
@@ -280,6 +306,8 @@ export default function App() {
             <VolunteerView />
           ) : activeView === 'team' ? (
             <PersonnelManager />
+          ) : activeView === 'settings' ? (
+            <Settings />
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center p-12 max-w-sm">
