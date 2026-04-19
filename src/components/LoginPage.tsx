@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Send, ShieldAlert, LogIn, Activity, FileText, CheckCircle2, AlertCircle, Wrench, Heart, Mail, Lock, User, Eye, EyeOff, ChevronRight, Shield } from 'lucide-react';
+import { Send, ShieldAlert, LogIn, Activity, FileText, CheckCircle2, AlertCircle, Wrench, Heart, Mail, Lock, User, Eye, EyeOff, ChevronRight, ChevronDown, Shield, Phone, Clock, MapPin, CreditCard, Users as UsersIcon, Award } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, addDoc, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -15,6 +15,7 @@ export const LoginPage: React.FC = () => {
   const [applied, setApplied] = useState(false);
   const [authError, setAuthError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Auth form state
   const [authData, setAuthData] = useState({
@@ -157,7 +158,7 @@ export const LoginPage: React.FC = () => {
   }
 
   return (
-    <div className="fixed inset-0 bg-[var(--bg)] flex flex-col lg:flex-row text-[var(--text-primary)] overflow-y-auto">
+    <div className="fixed inset-0 bg-[var(--bg)] flex flex-col lg:flex-row text-[var(--text-primary)] overflow-hidden">
       {/* Visual Left Side (Desktop Only) */}
       <div className="hidden lg:flex flex-1 relative bg-[var(--surface)] overflow-hidden items-center justify-center">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(2,132,199,0.05)_0%,transparent_50%)]" />
@@ -189,7 +190,7 @@ export const LoginPage: React.FC = () => {
       </div>
 
       {/* Interaction Right Side */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 lg:p-12 relative">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 lg:p-12 relative">
         <div className="absolute top-8 right-8 lg:hidden">
           <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden border border-[var(--border)]">
             <img src="/logo.png" alt="Sahaya" className="w-full h-full object-cover" />
@@ -199,7 +200,7 @@ export const LoginPage: React.FC = () => {
         <motion.div 
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md space-y-12 relative z-10"
+          className="w-full relative z-10 flex flex-col items-center px-4"
         >
           <AnimatePresence mode="wait">
             {view === 'welcome' ? (
@@ -208,7 +209,7 @@ export const LoginPage: React.FC = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="space-y-10"
+                className="space-y-10 w-full max-w-md"
               >
                 <div className="space-y-4 lg:text-left text-center">
                   <h2 className="text-3xl font-bold tracking-tight">Sahaya Portal</h2>
@@ -294,7 +295,7 @@ export const LoginPage: React.FC = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="space-y-8"
+                className="space-y-8 w-full max-w-md"
               >
                 <div className="space-y-3 lg:text-left text-center">
                   <h2 className="text-3xl font-bold tracking-tight">
@@ -432,136 +433,216 @@ export const LoginPage: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.98 }}
-                className="space-y-8 bg-[var(--surface)] p-8 sm:p-10 rounded-[36px] border border-[var(--border)] shadow-sm"
+                className="w-full max-w-5xl mx-auto bg-[var(--surface)]/80 backdrop-blur-2xl rounded-[32px] sm:rounded-[48px] border border-[var(--border)] shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[85vh]"
               >
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <h2 className="text-2xl font-bold tracking-tight">Volunteer Application</h2>
-                    <p className="text-xs font-semibold text-[var(--accent)] tracking-wide">Join the Network</p>
+                <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--accent)]/5 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
+                
+                {/* FIXED HEADER */}
+                <div className="relative z-10 shrink-0 p-5 sm:p-10 border-b border-[var(--border)]/50">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="space-y-2 text-center sm:text-left">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/20 text-[10px] font-black uppercase tracking-widest text-[var(--accent)] mb-1 sm:mb-2">
+                         <Award className="w-3 h-3" /> Professional Network
+                      </div>
+                      <h2 className="text-2xl sm:text-4xl font-black tracking-tighter">Volunteer Application</h2>
+                      <p className="text-[var(--text-secondary)] text-[11px] sm:text-sm font-medium">Step up to help your community coordinate and recover.</p>
+                    </div>
+                    <button 
+                      onClick={() => setView('welcome')}
+                      className="self-center sm:self-start px-4 py-2 bg-[var(--bg)] hover:bg-[var(--border)] rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[10px] sm:text-xs font-bold transition-all shadow-sm flex items-center gap-2 border border-[var(--border)]"
+                    >
+                      ← Cancel
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => setView('welcome')}
-                    className="p-2 bg-[var(--border)] hover:bg-[var(--hover)] rounded-xl text-[var(--text-secondary)] text-xs font-bold transition-all"
-                  >
-                    Back
-                  </button>
                 </div>
 
-                {!user && (
-                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-600 dark:text-amber-400 text-xs font-bold flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    You must sign in before applying. 
-                    <button onClick={() => setView('auth')} className="underline ml-1">Sign in here</button>
-                  </div>
-                )}
+                {/* SCROLLABLE CONTENT AREA */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-8 sm:px-12 py-10 space-y-10">
+                  {!user && (
+                    <div className="p-5 bg-blue-500/5 border border-blue-500/10 rounded-[28px] flex items-center gap-4 group">
+                      <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center shrink-0">
+                        <ShieldAlert className="w-6 h-6 text-blue-500" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-[var(--text-primary)]">Authentication Required</p>
+                        <p className="text-xs text-[var(--text-secondary)] font-medium">
+                          You must <button onClick={() => setView('auth')} className="text-blue-500 hover:underline font-bold">sign in</button> before submitting your application.
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
-                <form onSubmit={handleApply} className="space-y-8">
-                  <div className="space-y-6">
-                    <div>
-                      <label className="text-xs font-bold text-[var(--text-secondary)] mb-3 block">How can you help?</label>
-                      <div className="flex flex-wrap gap-2">
+                  <form onSubmit={handleApply} className="space-y-10 pb-8">
+                    {/* Capabilities Section */}
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-3 px-1">
+                        <Wrench className="w-4 h-4 text-[var(--accent)]" />
+                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Operational Capabilities</h3>
+                      </div>
+                      <div className="flex flex-wrap gap-2.5">
                         {ALL_SKILLS.map(skill => (
                           <button
                             key={skill}
                             type="button"
                             onClick={() => toggleSkill(skill)}
-                            className={`px-3 py-2 rounded-xl border text-xs font-semibold capitalize transition-all ${
+                            className={`px-4 py-2.5 rounded-2xl border text-xs font-bold capitalize transition-all duration-300 flex items-center gap-2 ${
                               appData.selectedSkills.includes(skill)
-                                ? 'bg-[var(--text-primary)] border-[var(--text-primary)] text-[var(--text-inverse)] shadow-sm'
-                                : 'bg-[var(--bg)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--text-secondary)]/50'
+                                ? 'bg-[var(--accent)] border-[var(--accent)] text-white shadow-[0_0_20px_-5px_var(--accent)] scale-[1.05]'
+                                : 'bg-[var(--bg)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--text-secondary)]/40 hover:bg-[var(--hover)]'
                             }`}
                           >
+                            {appData.selectedSkills.includes(skill) && <CheckCircle2 className="w-3 h-3" />}
                             {skill}
                           </button>
                         ))}
                       </div>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-[var(--text-secondary)] block">Phone Number</label>
+                    {/* Identification & Contact Group */}
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-2 col-span-2 md:col-span-1">
+                        <label className="text-xs font-bold text-[var(--text-secondary)] ml-1">Phone Number</label>
+                        <div className="relative group">
+                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)] group-focus-within:text-[var(--accent)] transition-colors" />
                           <input 
                             required
                             type="tel"
                             value={appData.phone}
                             onChange={e => setAppData(prev => ({ ...prev, phone: e.target.value }))}
                             placeholder="+1 234 567 890"
-                            className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-xl p-3.5 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/60 focus:border-[var(--accent)] outline-none transition-all shadow-sm"
+                            className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl p-4 pl-12 text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/40 focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/5 outline-none transition-all shadow-sm"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-[var(--text-secondary)] block">Availability</label>
-                          <select 
-                            value={appData.availability}
-                            onChange={e => setAppData(prev => ({ ...prev, availability: e.target.value as any }))}
-                            className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-xl p-3.5 text-sm font-medium text-[var(--text-primary)] focus:border-[var(--accent)] outline-none transition-all appearance-none shadow-sm"
+                      </div>
+                      <div className="space-y-2 col-span-2 md:col-span-1">
+                        <label className="text-xs font-bold text-[var(--text-secondary)] ml-1">Availability</label>
+                        <div className="relative group" id="availability-dropdown">
+                          <button
+                            type="button"
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            className={`w-full bg-[var(--bg)] border rounded-2xl p-4 pl-12 text-sm font-semibold text-[var(--text-primary)] text-left transition-all shadow-sm flex items-center justify-between ${
+                              isDropdownOpen ? 'border-[var(--accent)] ring-4 ring-[var(--accent)]/5' : 'border-[var(--border)] group-hover:border-[var(--text-secondary)]/40'
+                            }`}
                           >
-                            <option value="immediate">Immediate</option>
-                            <option value="scheduled">Scheduled Availability</option>
-                            <option value="on-call">On-Call Only</option>
-                          </select>
+                            <div className="flex items-center gap-4">
+                              <Clock className={`w-4 h-4 transition-colors ${isDropdownOpen ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)]'}`} />
+                              <span className="capitalize">{appData.availability.replace('-', ' ')} Availability</span>
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-[var(--text-secondary)] transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                          </button>
+
+                          <AnimatePresence>
+                            {isDropdownOpen && (
+                              <motion.div
+                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                className="absolute top-full left-0 right-0 mt-2 bg-[var(--surface)] border border-[var(--border)] rounded-[24px] shadow-2xl z-[100] overflow-hidden backdrop-blur-3xl"
+                              >
+                                {[
+                                  { value: 'immediate', label: 'Immediate Availability' },
+                                  { value: 'scheduled', label: 'Scheduled Availability' },
+                                  { value: 'on-call', label: 'On-Call Only' }
+                                ].map((opt) => (
+                                  <button
+                                    key={opt.value}
+                                    type="button"
+                                    onClick={() => {
+                                      setAppData(prev => ({ ...prev, availability: opt.value as any }));
+                                      setIsDropdownOpen(false);
+                                    }}
+                                    className={`w-full p-4 text-sm font-bold text-left transition-all hover:bg-[var(--accent)] hover:text-white flex items-center justify-between ${
+                                      appData.availability === opt.value ? 'bg-[var(--accent)]/5 text-[var(--accent)]' : 'text-[var(--text-secondary)]'
+                                    }`}
+                                  >
+                                    {opt.label}
+                                    {appData.availability === opt.value && <CheckCircle2 className="w-4 h-4" />}
+                                  </button>
+                                ))}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Location & Context Section */}
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-[var(--text-secondary)] ml-1">Deployment Radius / Area</label>
+                        <div className="relative group">
+                          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)] group-focus-within:text-[var(--accent)] transition-colors" />
+                          <input 
+                            required
+                            type="text"
+                            value={appData.address}
+                            onChange={e => setAppData(prev => ({ ...prev, address: e.target.value }))}
+                            placeholder="Where are you located?"
+                            className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl p-4 pl-12 text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/40 focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/5 outline-none transition-all shadow-sm"
+                          />
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-[var(--text-secondary)] block">General Area</label>
-                        <input 
-                          required
-                          type="text"
-                          value={appData.address}
-                          onChange={e => setAppData(prev => ({ ...prev, address: e.target.value }))}
-                          placeholder="Where are you located?"
-                          className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-xl p-3.5 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/60 focus:border-[var(--accent)] outline-none transition-all shadow-sm"
-                        />
+                         <label className="text-xs font-bold text-[var(--text-secondary)] ml-1">Experience Summary</label>
+                         <textarea 
+                           required
+                           value={appData.bio}
+                           onChange={e => setAppData(prev => ({ ...prev, bio: e.target.value }))}
+                           placeholder="Briefly describe your relevant background or skills..."
+                           className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-[24px] p-5 text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/40 focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/5 outline-none transition-all resize-none h-32 shadow-sm"
+                         />
                       </div>
+                    </div>
 
+                    {/* Verification & Risk Group */}
+                    <div className="grid md:grid-cols-2 gap-6 pt-4 border-t border-[var(--border)]">
                       <div className="space-y-2">
-                        <label className="text-xs font-bold text-[var(--text-secondary)] block">Experience summary</label>
-                        <textarea 
-                          required
-                          value={appData.bio}
-                          onChange={e => setAppData(prev => ({ ...prev, bio: e.target.value }))}
-                          placeholder="Tell us a little about your background..."
-                          className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-xl p-3.5 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/60 focus:border-[var(--accent)] outline-none transition-all resize-none h-24 shadow-sm"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-[var(--text-secondary)] block">ID Document</label>
+                        <label className="text-xs font-bold text-[var(--text-secondary)] ml-1">Identification Number</label>
+                        <div className="relative group">
+                          <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)] group-focus-within:text-[var(--accent)] transition-colors" />
                           <input 
                             required
                             type="text"
                             value={appData.idProofText}
                             onChange={e => setAppData(prev => ({ ...prev, idProofText: e.target.value }))}
                             placeholder="Govt ID Number"
-                            className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-xl p-3.5 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/60 focus:border-[var(--accent)] outline-none transition-all shadow-sm"
+                            className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl p-4 pl-12 text-sm font-semibold text-[var(--text-primary)] focus:border-[var(--accent)] outline-none transition-all shadow-sm"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <label className="text-xs font-bold text-[var(--text-secondary)] block">Emergency Contact</label>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-[var(--text-secondary)] ml-1">Emergency Contact</label>
+                        <div className="relative group">
+                          <UsersIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)] group-focus-within:text-[var(--accent)] transition-colors" />
                           <input 
                             type="text"
                             value={appData.emergencyContact}
                             onChange={e => setAppData(prev => ({ ...prev, emergencyContact: e.target.value }))}
-                            placeholder="Name & Phone"
-                            className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-xl p-3.5 text-sm font-medium text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/60 focus:border-[var(--accent)] outline-none transition-all shadow-sm"
+                            placeholder="Name & Relationship"
+                            className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl p-4 pl-12 text-sm font-semibold text-[var(--text-primary)] focus:border-[var(--accent)] outline-none transition-all shadow-sm"
                           />
                         </div>
                       </div>
                     </div>
 
-                  </div>
-
-                  <button 
-                    type="submit"
-                    disabled={isSubmitting || !user}
-                    className="w-full bg-[var(--text-primary)] text-[var(--text-inverse)] py-4 rounded-[20px] font-bold text-sm hover:opacity-90 active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-3 shadow-md"
-                  >
-                    {isSubmitting ? <Activity className="w-5 h-5 animate-spin" /> : 'Submit Application'}
-                  </button>
-                </form>
+                    <button 
+                      type="submit"
+                      disabled={isSubmitting || !user}
+                      className="w-full group relative bg-[var(--text-primary)] text-[var(--text-inverse)] py-5 rounded-[28px] font-black text-sm uppercase tracking-widest hover:opacity-95 active:scale-[0.98] disabled:opacity-30 transition-all flex items-center justify-center gap-4 shadow-xl overflow-hidden"
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                      {isSubmitting ? (
+                        <Activity className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <>
+                          <FileText className="w-5 h-5" />
+                          Submit Verification File
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
