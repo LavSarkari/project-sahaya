@@ -177,7 +177,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="h-px bg-[var(--border)] mx-4 my-1 opacity-50" />
 
       {/* Live Stats Panel */}
-      {profile?.role !== 'reporter' && !collapsed && (
+      {isAdmin && !collapsed && (
         <div className="px-3 py-3 space-y-3">
           {/* Quick Stats */}
           <div className="grid grid-cols-2 gap-2">
@@ -225,7 +225,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="h-px bg-[var(--border)] mx-4 opacity-50" />
 
       {/* Dynamic Regions from live data */}
-      {profile?.role !== 'reporter' && !collapsed && (
+      {isAdmin && !collapsed && (
         <div className="p-3 flex flex-col flex-1 overflow-hidden">
           <h2 className="text-[11px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-3 flex items-center gap-2">
             <MapPin className="w-3.5 h-3.5" />
