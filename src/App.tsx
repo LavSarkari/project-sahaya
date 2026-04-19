@@ -237,9 +237,13 @@ export default function App() {
                 <div className="h-[320px] lg:h-full lg:flex-1 relative border-b lg:border-b-0 lg:border-l border-[var(--border)] bg-brand-bg overflow-hidden order-first lg:order-last">
                   <button 
                     onClick={() => setIsPanelOpen(!isPanelOpen)}
-                    className="absolute top-4 left-4 z-[500] bg-[var(--surface)]/90 backdrop-blur-md border border-[var(--border)] p-2.5 rounded-xl shadow-lg hidden lg:flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition-all"
+                    title={isPanelOpen ? "Close Controls" : "Open Controls"}
+                    className="absolute top-1/2 -translate-y-1/2 left-0 z-[500] w-5 h-24 bg-[var(--surface)]/90 backdrop-blur-md border border-[var(--border)] border-l-0 rounded-r-2xl shadow-2xl hidden lg:flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:w-7 hover:bg-[var(--surface)] transition-all group"
                   >
-                    {isPanelOpen ? <PanelLeftClose className="w-5 h-5 pointer-events-none" /> : <PanelLeftOpen className="w-5 h-5 pointer-events-none" />}
+                    <div className="flex flex-col items-center gap-1">
+                      {isPanelOpen ? <PanelLeftClose className="w-4 h-4 pointer-events-none" /> : <PanelLeftOpen className="w-4 h-4 pointer-events-none" />}
+                      <div className="w-1 h-8 bg-[var(--border)] rounded-full group-hover:bg-[var(--accent)] transition-colors" />
+                    </div>
                   </button>
                   <MapView 
                     issues={filteredIssues}
