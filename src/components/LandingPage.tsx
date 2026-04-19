@@ -40,8 +40,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       {/* Nav */}
       <nav className="relative z-50 flex items-center justify-between px-6 md:px-12 py-8 max-w-[1400px] mx-auto">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-[#0a84ff] to-[#00d2ff] rounded-2xl flex items-center justify-center shadow-lg shadow-[#0a84ff]/20 border border-white/10">
-            <Heart className="text-white w-5 h-5 fill-white" />
+          <div className="w-10 h-10 bg-[var(--surface)] rounded-2xl flex items-center justify-center shadow-lg shadow-[var(--accent)]/20 border border-[var(--border)] overflow-hidden">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
           <div>
             <h1 className="text-2xl font-black tracking-tight text-white leading-none">Sahaya</h1>
