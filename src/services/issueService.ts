@@ -119,8 +119,11 @@ export const getGlobalStats = async () => {
       activeVolunteers: volunteersSnap.size,
       lastUpdated: new Date().toISOString()
     };
-  } catch (error) {
-    console.error('Failed to fetch global stats:', error);
+  } catch (error: any) {
+    // Only log errors that aren't permission related (which are expected for guests)
+    if (error?.code !== 'permission-denied') {
+      console.error('Failed to fetch global stats:', error);
+    }
     return { activeIssues: 12, activeVolunteers: 450, lastUpdated: new Date().toISOString() }; // Fallback to safe defaults
   }
 };

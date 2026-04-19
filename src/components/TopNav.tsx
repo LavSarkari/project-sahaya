@@ -27,7 +27,7 @@ export const TopNav: React.FC<TopNavProps> = ({ onMenuClick, activeView, theme, 
         >
           <Menu className="w-5 h-5" />
         </button>
-        <div className="w-8 h-8 rounded-xl overflow-hidden shadow-sm hidden xs:flex items-center justify-center bg-white shrink-0">
+        <div className="w-8 h-8 rounded-xl overflow-hidden shadow-sm hidden xs:flex items-center justify-center bg-[var(--bg)] border border-[var(--border)] shrink-0 transition-colors">
           <img src="/logo.png" alt="Sahaya Logo" className="w-full h-full object-cover" />
         </div>
         <div>

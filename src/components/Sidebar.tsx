@@ -88,7 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[150] lg:hidden"
+            className="fixed inset-0 bg-[var(--bg)]/80 backdrop-blur-sm z-[150] lg:hidden"
           />
         )}
       </AnimatePresence>
@@ -212,7 +212,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Category chips */}
           <div className="flex flex-wrap gap-1.5">
-            {Object.entries(stats.categories).sort((a, b) => b[1] - a[1]).map(([cat, count]) => (
+            {Object.entries(stats.categories).sort((a, b) => (b[1] as number) - (a[1] as number)).map(([cat, count]) => (
               <div key={cat} className="flex items-center gap-1 bg-[var(--bg)] border border-[var(--border)] rounded-lg px-2 py-1">
                 {categoryIcon(cat)}
                 <span className="text-[10px] font-semibold text-[var(--text-secondary)]">{count}</span>

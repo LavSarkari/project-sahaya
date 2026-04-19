@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Send, ShieldAlert, LogIn, Activity, FileText, CheckCircle2, AlertCircle, Wrench, Heart, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { Send, ShieldAlert, LogIn, Activity, FileText, CheckCircle2, AlertCircle, Wrench, Heart, Mail, Lock, User, Eye, EyeOff, ChevronRight, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, addDoc, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -209,49 +209,77 @@ export const LoginPage: React.FC = () => {
                 exit={{ opacity: 0, y: -10 }}
                 className="space-y-10"
               >
-                <div className="space-y-3 lg:text-left text-center">
-                  <h2 className="text-3xl font-bold tracking-tight">Get Started</h2>
-                  <p className="text-[var(--text-secondary)] text-sm font-medium">How would you like to use Sahaya today?</p>
+                <div className="space-y-4 lg:text-left text-center">
+                  <h2 className="text-3xl font-bold tracking-tight">Sahaya Portal</h2>
+                  <p className="text-[var(--text-secondary)] text-sm font-medium leading-relaxed">Choose your entry point to access coordination and support tools.</p>
                 </div>
 
-                <div className="space-y-4">
-                  <button 
-                    onClick={() => { setAuthMode('login'); setView('auth'); }}
-                    className="w-full group relative flex items-center justify-between bg-[var(--surface)] border border-[var(--border)] p-6 rounded-[24px] transition-all hover:shadow-md hover:bg-[var(--hover)] active:scale-[0.98]"
-                  >
-                    <div className="flex items-center gap-5">
-                      <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center">
-                        <Send className="w-6 h-6 text-blue-500" />
+                <div className="space-y-6">
+                  {/* CITIZEN ENTRY */}
+                  <div className="space-y-3">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)] px-1">Citizen Services</h3>
+                    <button 
+                      onClick={() => { setAuthMode('login'); setView('auth'); }}
+                      className="w-full group relative flex items-center justify-between bg-blue-500/5 border border-blue-500/20 p-5 rounded-[24px] transition-all hover:shadow-md hover:bg-blue-500/10 active:scale-[0.98]"
+                    >
+                      <div className="flex items-center gap-5">
+                        <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center">
+                          <Send className="w-6 h-6 text-blue-500" />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-[15px] font-bold text-[var(--text-primary)]">Request Help</div>
+                          <div className="text-xs text-[var(--text-secondary)] font-medium mt-0.5">Report issues and track assistance</div>
+                        </div>
                       </div>
-                      <div className="text-left">
-                        <div className="text-[15px] font-bold text-[var(--text-primary)]">Request Help</div>
-                        <div className="text-xs text-[var(--text-secondary)] font-medium mt-0.5">Report issues and request assistance</div>
-                      </div>
-                    </div>
-                    <LogIn className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
-                  </button>
+                      <ChevronRight className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
+                    </button>
+                  </div>
 
-                  <button 
-                    onClick={() => setView('apply')}
-                    className="w-full group relative flex items-center justify-between bg-[var(--text-primary)] border border-transparent text-[var(--text-inverse)] p-6 rounded-[24px] transition-all hover:opacity-90 active:scale-[0.98] shadow-sm"
-                  >
-                    <div className="flex items-center gap-5">
-                      <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
-                        <Heart className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="text-left">
-                        <div className="text-[15px] font-bold">Join as Volunteer</div>
-                        <div className="text-xs text-[var(--text-inverse)]/80 font-medium mt-0.5">Help your community in times of need</div>
-                      </div>
+                  {/* OPERATIONAL ENTRY */}
+                  <div className="space-y-3">
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)] px-1">Operational Access</h3>
+                    <div className="grid gap-3">
+                      {/* Volunteer Sign In / Apply */}
+                      <button 
+                        onClick={() => { setAuthMode('login'); setView('auth'); }}
+                        className="w-full group relative flex items-center justify-between bg-[var(--surface)] border border-[var(--border)] p-5 rounded-[24px] transition-all hover:shadow-md hover:bg-[var(--hover)] active:scale-[0.98]"
+                      >
+                        <div className="flex items-center gap-5">
+                          <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
+                            <Shield className="w-6 h-6 text-emerald-500" />
+                          </div>
+                          <div className="text-left">
+                            <div className="text-[15px] font-bold text-[var(--text-primary)]">Volunteer Log In</div>
+                            <div className="text-xs text-[var(--text-secondary)] font-medium mt-0.5">Access your field operator HUD</div>
+                          </div>
+                        </div>
+                        <LogIn className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
+                      </button>
+
+                      <button 
+                        onClick={() => setView('apply')}
+                        className="w-full group relative flex items-center justify-between bg-[var(--text-primary)] border border-transparent text-[var(--text-inverse)] p-6 rounded-[24px] transition-all hover:opacity-90 active:scale-[0.98] shadow-sm"
+                      >
+                        <div className="flex items-center gap-5">
+                          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
+                            <Heart className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="text-left">
+                            <div className="text-[15px] font-bold">New: Join the Force</div>
+                            <div className="text-xs text-[var(--text-inverse)]/80 font-medium mt-0.5">Apply to become a verified volunteer</div>
+                          </div>
+                        </div>
+                        <FileText className="w-5 h-5 text-[var(--text-inverse)]/70 group-hover:text-white transition-colors" />
+                      </button>
                     </div>
-                    <FileText className="w-5 h-5 text-[var(--text-inverse)]/70 group-hover:text-white transition-colors" />
-                  </button>
+                  </div>
                 </div>
 
-                <div className="pt-8 flex items-center justify-center gap-6">
+                <div className="pt-4 flex items-center justify-center gap-2 border-t border-[var(--border)] pt-8">
+                  <span className="text-[10px] uppercase font-bold text-[var(--text-secondary)] tracking-widest">Internal Control:</span>
                   <button 
                     onClick={() => { setAuthMode('login'); setView('auth'); }}
-                    className="text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                    className="text-[10px] uppercase font-black text-[var(--text-secondary)] hover:text-[var(--text-primary)] underline decoration-[var(--border)] underline-offset-4 transition-colors"
                   >
                     Administrator Log In
                   </button>

@@ -161,6 +161,7 @@ export const MapView: React.FC<MapViewProps> = ({
         >
           {/* Mission Paths - Tactical SVGs connecting teams to crises */}
           {missionPaths.map(path => path && (
+            // @ts-ignore
             <Marker key={path.id} anchor={[path.from.lat, path.from.lng]}>
               <div className="pointer-events-none overflow-visible">
                 <svg className="absolute top-0 left-0 w-[2000px] h-[2000px] -translate-x-1/2 -translate-y-1/2 transition-all">
@@ -181,6 +182,7 @@ export const MapView: React.FC<MapViewProps> = ({
           {clusterData.map(item => {
             if (item.type === 'cluster') {
               const isHighPriority = item.avgPriority === 'HIGH';
+              // @ts-ignore
               return (
                 <Marker key={item.id} anchor={[item.coordinates.lat, item.coordinates.lng]}>
                   <button onClick={() => handleClusterClick(item)} className="relative group transition-all">
@@ -201,6 +203,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
             const issue = item.data;
             const isSelected = selectedIssueId === issue.id;
+            // @ts-ignore
             return (
               <Marker key={issue.id} anchor={[issue.coordinates.lat, issue.coordinates.lng]} onClick={() => onSelectIssue(issue)}>
                 <div className={`relative group cursor-pointer transition-all duration-500 ${isSelected ? 'scale-125 z-50' : ''}`}>
