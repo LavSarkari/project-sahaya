@@ -7,7 +7,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function isAdminEmail(email?: string | null) {
-  return email?.toLowerCase() === 'luv.sarkari@gmail.com';
+  const admins = ['luv.sarkari@gmail.com', 'annoyinglav@gmail.com'];
+  return email ? admins.includes(email.toLowerCase()) : false;
 }
 
 export function getNearestArea(lat: number, lng: number) {

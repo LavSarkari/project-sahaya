@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Brain, ShieldAlert, Clock, Map, Navigation, Info, ExternalLink, MapPin, CheckCircle2, Activity, Filter, Wrench, Sparkles, UserCheck } from 'lucide-react';
+import { Brain, ShieldAlert, Clock, Map, Navigation, Info, ExternalLink, MapPin, CheckCircle2, Activity, Filter, Wrench, Sparkles, UserCheck, X, FileText, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
 import { Issue } from '../types';
-import { generateRecommendation } from '../lib/ai';
+import { generateRecommendation, analyzeTacticalDepth, matchVolunteerToTask } from '../services/aiService';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 
@@ -27,7 +27,10 @@ export const IssueDetail: React.FC<IssueDetailProps> = ({ issue }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [volunteers, setVolunteers] = useState<{uid: string, name: string, skills?: string[]}[]>([]);
   const [isDeploying, setIsDeploying] = useState(false);
-  const [skillFilter, setSkillFilter] = useState<string>('all');
+  const [showAllVolunteers, setShowAllVolunteers] = useState(false);
+  const [smartMatches, setSmartMatches] = useState<any[]>([]);
+  const [isMatching, setIsMatching] = useState(false);
+  const [viewingPersonnel, setViewingPersonnel] = useState<any | null>(null);
 
   useEffect(() => {
     const fetchRec = async () => {
@@ -38,8 +41,12 @@ export const IssueDetail: React.FC<IssueDetailProps> = ({ issue }) => {
       setLoading(false);
     };
 
-    fetchRec();
-  }, [issue]);
+    const timer = setTimeout(() => {
+       fetchRec();
+    }, 400); // 400ms debounce for basic recommendation
+
+    return () => clearTimeout(timer);
+  }, [issue?.id]);
 
   useEffect(() => {
     const fetchVolunteers = async () => {
@@ -62,16 +69,38 @@ export const IssueDetail: React.FC<IssueDetailProps> = ({ issue }) => {
     fetchVolunteers();
   }, [profile]);
 
-  const filteredVolunteers = (skillFilter === 'all' 
-    ? volunteers 
-    : volunteers.filter(v => v.skills?.includes(skillFilter)))
-    .sort((a, b) => {
-      const targetSkill = issue ? CATEGORY_SKILL_MAP[issue.category] : '';
-      if (!targetSkill) return 0;
-      const aMatches = a.skills?.includes(targetSkill) ? 1 : 0;
-      const bMatches = b.skills?.includes(targetSkill) ? 1 : 0;
-      return bMatches - aMatches;
-    });
+  // NEW: Run Smart Matching for the specific issue when volunteers are loaded
+  useEffect(() => {
+    if (profile?.role === 'admin' && issue && volunteers.length > 0) {
+      const runMatching = async () => {
+        setIsMatching(true);
+        // Only match volunteers who are on standby
+        const standbyVolunteers = volunteers.filter(v => {
+           // We need to fetch the full user profile status to know if they are standby
+           // For now, we'll assume they are standby if they are in the list, 
+           // but traditionally we'd filter by status. 
+           // Since the component currently gets all volunteers, we'll match all for best insights.
+           return true; 
+        });
+
+        if (standbyVolunteers.length > 0) {
+          const results = await matchVolunteerToTask(issue, standbyVolunteers);
+          setSmartMatches(results.matches || []);
+        }
+        setIsMatching(false);
+      };
+
+      const timer = setTimeout(() => {
+        runMatching();
+      }, 600); // 600ms debounce for heavy matching logic
+
+      return () => clearTimeout(timer);
+    }
+  }, [issue?.id, volunteers.length, profile?.uid]);
+
+  const targetSkill = issue ? CATEGORY_SKILL_MAP[issue.category] : '';
+  const recommendedVolunteers = targetSkill ? volunteers.filter(v => v.skills?.includes(targetSkill) || v.uid === issue?.assignedTo) : volunteers.filter(v => v.uid === issue?.assignedTo);
+  const assignedVolunteer = volunteers.find(v => v.uid === issue?.assignedTo);
 
   const handleDeploy = async (volunteerId: string) => {
     if (!issue) return;
@@ -100,16 +129,15 @@ export const IssueDetail: React.FC<IssueDetailProps> = ({ issue }) => {
   };
 
   if (!issue) {
-    // ... same empty state
     return (
-      <div className="flex-1 flex items-center justify-center bg-slate-900/10 h-full p-12">
+      <div className="flex-1 flex items-center justify-center bg-[var(--bg)] h-full p-12">
         <div className="text-center max-w-xs space-y-4">
-          <div className="w-10 h-10 rounded border border-white/5 flex items-center justify-center mx-auto bg-slate-900/40">
-            <Info className="w-4 h-4 text-slate-700" />
+          <div className="w-10 h-10 rounded-xl border border-[var(--border)] flex items-center justify-center mx-auto bg-[var(--surface)]">
+            <Info className="w-5 h-5 text-[var(--text-secondary)]" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Awaiting Signal</h3>
-            <p className="text-[10px] text-slate-700 font-sans uppercase">Select an incident from the log to initialize telemetry</p>
+            <h3 className="text-sm font-bold text-[var(--text-primary)]">No Request Selected</h3>
+            <p className="text-xs text-[var(--text-secondary)] font-medium">Select an incident from the list to view details and assign support.</p>
           </div>
         </div>
       </div>
@@ -117,45 +145,45 @@ export const IssueDetail: React.FC<IssueDetailProps> = ({ issue }) => {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-slate-950/20 relative">
-      <div className="flex-1 overflow-y-auto p-4 space-y-7 custom-scrollbar">
+    <div className="flex-1 flex flex-col bg-[var(--bg)] relative overflow-hidden min-h-0">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-7 custom-scrollbar pb-24">
         {/* Header Section */}
         <section className="relative">
-          <div className="flex items-center gap-2.5 mb-2.5">
-            <span className="text-[8px] font-mono text-slate-500 bg-white/5 px-1.5 py-0.5 border border-white/5 uppercase">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[10px] font-bold text-[var(--text-secondary)] bg-[var(--surface)] px-2 py-0.5 border border-[var(--border)] rounded uppercase tracking-wider">
               ID: {issue.id}
             </span>
             {issue.priority === 'HIGH' && (
-              <span className="text-[7.5px] font-bold text-rose-500 bg-rose-500/10 px-1.5 py-0.5 border border-rose-500/20 uppercase tracking-tighter">
-                CRITICAL SIGNAL
+              <span className="text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 border border-rose-200 dark:border-rose-500/20 rounded uppercase tracking-wider">
+                CRITICAL
               </span>
             )}
           </div>
           
-          <h2 className="text-xl font-sans font-bold text-white leading-tight mb-3 pr-10 tracking-tight">
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] leading-tight mb-3 tracking-tight">
             {issue.title}
           </h2>
           
-          <div className="flex items-center gap-2.5 text-slate-400 text-[9px] font-bold uppercase tracking-wide">
-            <MapPin className="w-3 h-3 text-emerald-500" />
-            <span className="text-slate-300">{issue.location}</span>
-            <div className="w-0.5 h-0.5 rounded-full bg-slate-700" />
-            <span className="font-mono text-slate-500">{issue.areaId.toUpperCase()}</span>
+          <div className="flex items-center gap-2 text-[var(--text-secondary)] text-xs font-semibold">
+            <MapPin className="w-4 h-4 text-emerald-500" />
+            <span className="text-[var(--text-primary)]">{issue.location}</span>
+            <div className="w-1 h-1 rounded-full bg-[var(--border)]" />
+            <span className="opacity-70">{issue.areaId.toUpperCase()}</span>
           </div>
         </section>
 
         {/* AI Analysis Grid */}
         <section className="space-y-3">
-          <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
-            <h3 className="text-[8.5px] font-bold text-slate-600 uppercase tracking-[0.2em] flex items-center gap-2">
-              <Brain className="w-2.5 h-2.5 text-emerald-500" />
-              Strategic Coordination
+          <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
+            <h3 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-2">
+              <Brain className="w-4 h-4 text-[var(--accent)]" />
+              AI Analysis
             </h3>
-            <div className="text-[7.5px] font-mono text-emerald-500/40 uppercase tracking-widest">Ver: 3.0-FLASH</div>
+            <div className="text-[10px] font-medium text-[var(--text-secondary)] uppercase tracking-wider opacity-60">Gemini Powered</div>
           </div>
           
-          <div className={`p-4 rounded border transition-all duration-700 ${
-            loading ? 'bg-slate-900/40 border-white/5' : 'bg-emerald-500/[0.02] border-emerald-500/10'
+          <div className={`p-4 rounded-[16px] border transition-all duration-700 ${
+            loading ? 'bg-[var(--surface)] border-[var(--border)]' : 'bg-[var(--surface)] border-[var(--border)] shadow-sm'
           }`}>
             <AnimatePresence mode="wait">
               {loading ? (
@@ -164,15 +192,15 @@ export const IssueDetail: React.FC<IssueDetailProps> = ({ issue }) => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="space-y-3 py-1"
+                  className="space-y-3 py-2"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Activity className="w-3 h-3 text-emerald-500 animate-spin" />
-                    <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Synthesizing...</span>
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-[var(--accent)] animate-spin" />
+                    <span className="text-xs font-bold text-[var(--accent)]">Analyzing...</span>
                   </div>
-                  <div className="space-y-1.5">
-                    <div className="h-1.5 w-full bg-white/5 rounded animate-pulse" />
-                    <div className="h-1.5 w-3/4 bg-white/5 rounded animate-pulse" />
+                  <div className="space-y-2 pt-1">
+                    <div className="h-2 w-full bg-[var(--border)] rounded animate-pulse" />
+                    <div className="h-2 w-3/4 bg-[var(--border)] rounded animate-pulse" />
                   </div>
                 </motion.div>
               ) : (
@@ -181,23 +209,23 @@ export const IssueDetail: React.FC<IssueDetailProps> = ({ issue }) => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                 >
-                  <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                  <p className="text-sm text-[var(--text-primary)] leading-relaxed font-medium">
                     {aiRec || issue.aiRecommendation}
                   </p>
                   
-                  <div className="mt-5 grid grid-cols-2 gap-px bg-white/5 border border-white/5 overflow-hidden">
-                    <div className="bg-slate-950/40 p-3">
-                      <div className="text-[7.5px] text-slate-600 uppercase mb-1.5 font-bold tracking-widest">Projected ETA</div>
-                      <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-white">
-                        <Clock className="w-2.5 h-2.5 text-emerald-500" />
+                  <div className="mt-5 grid grid-cols-2 gap-2">
+                    <div className="bg-[var(--bg)] border border-[var(--border)] rounded-xl p-3">
+                      <div className="text-[10px] text-[var(--text-secondary)] uppercase mb-1 font-bold tracking-wider">Estimated Time</div>
+                      <div className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+                        <Clock className="w-4 h-4 text-[var(--accent)]" />
                         {issue.eta}
                       </div>
                     </div>
-                    <div className="bg-slate-950/40 p-3">
-                      <div className="text-[7.5px] text-slate-600 uppercase mb-1.5 font-bold tracking-widest">Impact Factor</div>
-                      <div className="flex items-center gap-1.5 text-[11px] font-mono font-bold text-white">
-                        <CheckCircle2 className="w-2.5 h-2.5 text-emerald-500" />
-                        {issue.peopleAffected.toString().padStart(2, '0')} SOULS
+                    <div className="bg-[var(--bg)] border border-[var(--border)] rounded-xl p-3">
+                      <div className="text-[10px] text-[var(--text-secondary)] uppercase mb-1 font-bold tracking-wider">People Affected</div>
+                      <div className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
+                        <Activity className="w-4 h-4 text-[var(--accent)]" />
+                        {issue.peopleAffected} People
                       </div>
                     </div>
                   </div>
@@ -207,15 +235,36 @@ export const IssueDetail: React.FC<IssueDetailProps> = ({ issue }) => {
           </div>
         </section>
 
+        {/* Deep Analysis Action */}
+        {(profile?.role === 'admin' || profile?.role === 'volunteer') && (
+          <section className="space-y-3">
+             <button
+               onClick={async () => {
+                 if (!issue) return;
+                 setLoading(true);
+                 const depth = await analyzeTacticalDepth(issue);
+                 setAiRec(depth);
+                 setLoading(false);
+               }}
+               disabled={loading}
+               className="w-full flex items-center justify-center gap-2 py-3 bg-[var(--surface)] hover:bg-[var(--hover)] border border-[var(--border)] rounded-xl text-xs font-bold text-[var(--accent)] transition-all shadow-sm"
+             >
+               <Sparkles className="w-4 h-4" />
+               Generate Detailed Plan
+             </button>
+          </section>
+        )}
+
         {/* Risk Assessment */}
-        <section className="space-y-2.5">
-          <div className="p-3 border-l-2 border-rose-500/30 bg-rose-500/[0.03]">
-            <div className="flex items-center gap-2 mb-1.5">
-              <ShieldAlert className="w-2.5 h-2.5 text-rose-500" />
-              <span className="text-[7.5px] font-bold text-rose-500 uppercase tracking-widest">Intelligence Report</span>
+
+        <section className="space-y-3">
+          <div className="p-4 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10">
+            <div className="flex items-center gap-2 mb-2">
+              <ShieldAlert className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+              <span className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider">Risk Note</span>
             </div>
-            <p className="text-[11px] text-rose-100/60 leading-relaxed italic">
-              "{issue.riskMessage}"
+            <p className="text-sm text-rose-800 dark:text-rose-200 leading-relaxed font-medium">
+              {issue.riskMessage}
             </p>
           </div>
         </section>
@@ -223,26 +272,26 @@ export const IssueDetail: React.FC<IssueDetailProps> = ({ issue }) => {
         {/* Multi-Signal Verification Log */}
         {issue.sourceDescriptions && issue.sourceDescriptions.length > 0 && (
           <section className="space-y-3">
-            <div className="flex items-center justify-between border-b border-white/5 pb-1.5">
-              <h3 className="text-[8.5px] font-bold text-slate-600 uppercase tracking-[0.2em] flex items-center gap-2">
-                <Activity className="w-2.5 h-2.5 text-indigo-500" />
-                Signal Pipeline Log ({issue.signalCount || 1} Sources)
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-2">
+              <h3 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-2">
+                <Activity className="w-4 h-4 text-indigo-500" />
+                Sourced Reports ({issue.signalCount || 1})
               </h3>
             </div>
             <div className="space-y-2">
               {issue.sourceDescriptions.map((desc, i) => (
-                <div key={i} className="p-3 bg-white/[0.02] border border-white/5 rounded-xl space-y-1">
+                <div key={i} className="p-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl space-y-1.5 shadow-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-[7px] font-mono text-slate-500 uppercase">Input Node #{i + 1}</span>
-                    <span className="text-[7px] font-mono text-slate-700 uppercase">Verified</span>
+                    <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase">Report #{i + 1}</span>
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase">Verified</span>
                   </div>
-                  <p className="text-[10px] text-slate-400 font-sans leading-relaxed">{desc}</p>
+                  <p className="text-xs text-[var(--text-primary)] font-medium leading-relaxed">{desc}</p>
                 </div>
               ))}
               {issue.signalCount && issue.signalCount > 1 && (
                 <div className="pt-2 px-1">
-                   <p className="text-[8px] text-indigo-400 font-bold uppercase tracking-widest leading-relaxed">
-                     ⚡ System Confidence grew by {( (issue.signalCount - 1) * 8 )}% due to cross-verification.
+                   <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold uppercase tracking-wider leading-relaxed">
+                     ⚡ Verified by {issue.signalCount} different sources.
                    </p>
                 </div>
               )}
@@ -250,115 +299,358 @@ export const IssueDetail: React.FC<IssueDetailProps> = ({ issue }) => {
           </section>
         )}
 
-        {/* Telemetry Grid */}
+        {/* Coordinates */}
         <section className="space-y-3">
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="p-3 border border-white/5 bg-slate-900/10">
-              <div className="text-[7.5px] text-slate-600 uppercase mb-1.5 font-bold tracking-widest">Latitude</div>
-              <div className="font-mono text-[10px] text-slate-300">{issue.coordinates.lat.toFixed(6)}</div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+              <div className="text-[10px] text-[var(--text-secondary)] uppercase mb-1 font-bold tracking-wider">Latitude</div>
+              <div className="font-mono text-xs font-semibold text-[var(--text-primary)]">{issue.coordinates.lat.toFixed(6)}</div>
             </div>
-            <div className="p-3 border border-white/5 bg-slate-900/10">
-              <div className="text-[7.5px] text-slate-600 uppercase mb-1.5 font-bold tracking-widest">Longitude</div>
-              <div className="font-mono text-[10px] text-slate-300">{issue.coordinates.lng.toFixed(6)}</div>
+            <div className="p-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+              <div className="text-[10px] text-[var(--text-secondary)] uppercase mb-1 font-bold tracking-wider">Longitude</div>
+              <div className="font-mono text-xs font-semibold text-[var(--text-primary)]">{issue.coordinates.lng.toFixed(6)}</div>
             </div>
           </div>
         </section>
       </div>
 
-      <div className="px-4 py-3.5 bg-slate-950 border-t border-white/5 space-y-3">
+      <div className="px-4 py-4 bg-[var(--surface)] border-t border-[var(--border)] shadow-lg space-y-3 relative z-10 shrink-0">
         {profile?.role === 'admin' ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between pl-1">
-              <div className="text-[8px] font-bold text-slate-500 uppercase tracking-widest leading-none">Assign Specialized Support</div>
-              <div className="flex items-center gap-2">
-                <Filter className="w-2.5 h-2.5 text-slate-700" />
-                <select 
-                  value={skillFilter}
-                  onChange={(e) => setSkillFilter(e.target.value)}
-                  className="bg-transparent text-[8px] font-bold text-slate-400 uppercase tracking-widest outline-none border-b border-white/5 pb-0.5 focus:border-emerald-500/50 transition-all cursor-pointer"
-                >
-                  <option value="all">Every Specialization</option>
-                  {ALL_SKILLS.map(s => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
+              <div className="text-xs font-bold text-[var(--text-primary)] tracking-wide">
+                Assign Volunteer
               </div>
+              {assignedVolunteer && (
+                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-500/10 rounded border border-emerald-200 dark:border-emerald-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Assigned</span>
+                </div>
+              )}
             </div>
+            
             <div className="grid grid-cols-1 gap-2">
-              {filteredVolunteers.length === 0 ? (
-                <div className="text-[10px] text-slate-600 italic p-3 border border-white/5 rounded flex items-center justify-center gap-2">
-                  <Activity className="w-3 h-3 opacity-30" />
-                  No personnel detected with this specialization
+              {recommendedVolunteers.length === 0 ? (
+                <div className="text-xs text-[var(--text-secondary)] font-medium p-4 border border-[var(--border)] rounded-xl flex items-center justify-center gap-2 bg-[var(--bg)]">
+                  <Activity className="w-4 h-4 opacity-50" />
+                  No direct skill matches available.
                 </div>
               ) : (
-                <div className="flex flex-col gap-2">
-                    {filteredVolunteers.map(v => {
-                    const targetSkill = issue ? CATEGORY_SKILL_MAP[issue.category] : '';
+                <div className="flex flex-col gap-3 max-h-[220px] overflow-y-auto custom-scrollbar pr-1">
+                    {recommendedVolunteers.map(v => {
                     const isRecommended = targetSkill && v.skills?.includes(targetSkill);
+                    const match = smartMatches.find(m => m.userId === v.uid);
+                    const isTopMatch = match && match.score >= 0.8;
 
                     return (
-                      <button
-                        key={v.uid}
-                        disabled={isDeploying || issue.assignedTo === v.uid}
-                        onClick={() => handleDeploy(v.uid)}
-                        className={`w-full py-3 px-4 rounded-xl flex items-center justify-between transition-all border ${
-                          issue.assignedTo === v.uid 
-                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 pointer-events-none' 
-                            : isRecommended
-                              ? 'bg-indigo-500/5 border-indigo-500/20 text-slate-300 hover:bg-indigo-500/10 hover:border-indigo-500/30'
-                              : 'bg-white/5 border-white/5 text-slate-300 hover:bg-white/10 hover:border-white/10'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 overflow-hidden">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] uppercase shrink-0 border font-bold transition-all ${
-                            isRecommended ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-400' : 'bg-slate-800 border-white/5'
-                          }`}>{v.name.charAt(0)}</div>
-                          <div className="flex flex-col items-start gap-0.5 overflow-hidden">
-                            <div className="flex items-center gap-1.5 w-full">
-                              <span className="text-[11px] font-bold tracking-tight truncate text-left">{v.name}</span>
-                              {isRecommended && (
-                                <div className="flex items-center gap-0.5 px-1 py-0.5 bg-indigo-500/20 rounded-[2px] border border-indigo-500/30">
-                                  <Sparkles className="w-2 h-2 text-indigo-400" />
-                                  <span className="text-[6px] font-black text-indigo-400 uppercase tracking-tighter">Matched</span>
-                                </div>
+                      <div key={v.uid} className="space-y-1">
+                        <div
+                          className={`w-full py-3 px-4 rounded-xl flex items-center justify-between transition-all border shadow-sm cursor-default ${
+                            issue.assignedTo === v.uid 
+                              ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
+                              : isTopMatch
+                                ? 'bg-amber-50 dark:bg-amber-500/5 border-amber-500/30 text-[var(--text-primary)] hover:border-amber-500 shadow-md'
+                                : 'bg-[var(--bg)] border-[#0a84ff]/30 text-[var(--text-primary)] hover:border-[#0a84ff]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 overflow-hidden flex-1" onClick={() => setViewingPersonnel(v)}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs uppercase shrink-0 border font-bold transition-all ${
+                              issue.assignedTo === v.uid 
+                                ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
+                                : isTopMatch
+                                  ? 'bg-amber-500/20 border-amber-500/30 text-amber-600 dark:text-amber-400'
+                                  : 'bg-[#0a84ff]/10 border-[#0a84ff]/30 text-[#0a84ff]'
+                            }`}>{v.name.charAt(0)}</div>
+                            <div className="flex flex-col items-start gap-1 overflow-hidden">
+                              <div className="flex items-center gap-2 w-full">
+                                <span className="text-sm font-semibold tracking-tight truncate text-left hover:text-[var(--accent)] transition-colors">{v.name}</span>
+                                {match && (
+                                  <div className={`flex items-center gap-1 px-1.5 py-0.5 ${isTopMatch ? 'bg-amber-500 text-white' : 'bg-amber-100 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'} rounded border ${isTopMatch ? 'border-amber-600' : 'border-amber-500/20'}`}>
+                                    {isTopMatch && <Sparkles className="w-2.5 h-2.5" />}
+                                    <span className="text-[8px] font-black uppercase tracking-wider">{(match.score * 100).toFixed(0)}% Match</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {v.skills?.map(skill => (
+                                  <span key={skill} className={`text-[8px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${
+                                    skill === targetSkill 
+                                      ? 'bg-[#0a84ff]/10 text-[#0a84ff] border-[#0a84ff]/20' 
+                                      : 'bg-[var(--surface)] text-[var(--text-secondary)] border-[var(--border)]'
+                                  }`}>
+                                    {skill}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          {issue.assignedTo === v.uid ? (
+                            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                          ) : (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeploy(v.uid);
+                              }}
+                              disabled={isDeploying}
+                              className="flex flex-col items-end gap-1 hover:scale-110 transition-transform p-1"
+                            >
+                              {match && (
+                                <span className="text-[9px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-tighter">{match.estimatedDeploymentTime} ETA</span>
                               )}
-                            </div>
-                            <div className="flex flex-wrap gap-1">
-                              {v.skills?.map(skill => (
-                                <span key={skill} className={`text-[6px] font-black uppercase tracking-tighter px-1 py-0.5 rounded-[1px] border ${
-                                  skill === targetSkill 
-                                    ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' 
-                                    : 'bg-white/5 text-slate-500 border-white/5'
-                                }`}>
-                                  {skill}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
+                              <UserCheck className={`w-5 h-5 ${isTopMatch ? 'text-amber-500' : 'text-[#0a84ff]'}`} />
+                            </button>
+                          )}
                         </div>
-                        {issue.assignedTo === v.uid ? (
-                          <CheckCircle2 className="w-4 h-4" />
-                        ) : isRecommended ? (
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[7px] font-bold text-indigo-400 uppercase tracking-widest hidden sm:inline">Priority Match</span>
-                            <UserCheck className="w-3.5 h-3.5 text-indigo-400" />
+                        {match && (
+                          <div 
+                            className="px-4 py-1.5 bg-amber-500/5 border-l-2 border-amber-500/30 ml-4 rounded-r-lg cursor-help"
+                            onClick={() => setViewingPersonnel(v)}
+                          >
+                            <p className="text-[10px] text-[var(--text-secondary)] font-medium leading-relaxed italic">
+                              "{match.reasoning}"
+                            </p>
                           </div>
-                        ) : (
-                          <Navigation className="w-3.5 h-3.5 text-slate-500" />
                         )}
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
               )}
             </div>
+
+            <button
+              onClick={() => setShowAllVolunteers(true)}
+              className="w-full py-3 bg-[var(--bg)] hover:bg-[var(--hover)] border border-[var(--border)] text-[var(--text-secondary)] font-bold rounded-xl text-xs transition-colors shadow-sm"
+            >
+              View All Personnel
+            </button>
           </div>
         ) : (
-          <button className="w-full bg-slate-800 text-slate-400 font-bold py-3 rounded-xl text-[9px] tracking-[0.25em] cursor-not-allowed uppercase">
-            Awaiting Command Assignment
+          <button className="w-full bg-[var(--surface)] border border-[var(--border)] text-[var(--text-secondary)] font-bold py-4 rounded-xl text-[10px] tracking-widest cursor-not-allowed uppercase shadow-sm">
+            Waiting for admin assignment
           </button>
         )}
       </div>
+
+      {/* All Volunteers Modal */}
+      <AnimatePresence>
+        {showAllVolunteers && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="w-full max-w-md bg-[var(--bg)] border border-[var(--border)] rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden"
+            >
+              <div className="p-4 sm:p-5 border-b border-[var(--border)] flex items-center justify-between bg-[var(--surface)]">
+                <div>
+                  <h3 className="text-lg font-bold text-[var(--text-primary)]">All Volunteers</h3>
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5 font-medium">Categorized by specialization</p>
+                </div>
+                <button
+                  onClick={() => setShowAllVolunteers(false)}
+                  className="w-8 h-8 rounded-full bg-[var(--bg)] border border-[var(--border)] flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 sm:p-5 custom-scrollbar space-y-6">
+                {ALL_SKILLS.map(skill => {
+                  const chunk = volunteers.filter(v => v.skills?.includes(skill));
+                  if (chunk.length === 0) return null;
+
+                  return (
+                    <div key={skill} className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="h-px bg-[var(--border)] flex-1" />
+                        <span className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest px-2 py-1 bg-[var(--surface)] border border-[var(--border)] rounded-full">
+                          {skill}
+                        </span>
+                        <div className="h-px bg-[var(--border)] flex-1" />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 gap-2">
+                        {chunk.map(v => {
+                          const match = smartMatches.find(m => m.userId === v.uid);
+                          const isTopMatch = match && match.score >= 0.8;
+
+                          return (
+                            <div key={v.uid} className="space-y-1">
+                              <button
+                                disabled={isDeploying || issue.assignedTo === v.uid}
+                                onClick={() => {
+                                  handleDeploy(v.uid);
+                                  setShowAllVolunteers(false);
+                                }}
+                                className={`w-full p-3 rounded-xl flex items-center justify-between transition-all border ${
+                                  issue.assignedTo === v.uid 
+                                    ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 pointer-events-none' 
+                                    : isTopMatch
+                                      ? 'bg-amber-50 dark:bg-amber-500/5 border-amber-500/30 text-[var(--text-primary)] hover:border-amber-500'
+                                      : 'bg-[var(--surface)] border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--hover)] hover:border-[var(--text-secondary)]'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs uppercase shrink-0 border font-bold ${
+                                    issue.assignedTo === v.uid 
+                                      ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
+                                      : isTopMatch
+                                        ? 'bg-amber-500/20 border-amber-500/30 text-amber-600 dark:text-amber-400'
+                                        : 'bg-[var(--bg)] border-[var(--border)] text-[var(--text-secondary)]'
+                                  }`}>{v.name.charAt(0)}</div>
+                                  <div className="flex flex-col items-start overflow-hidden">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-semibold truncate">{v.name}</span>
+                                      {match && (
+                                        <span className={`text-[8px] font-black uppercase tracking-wider px-1 py-0.5 rounded border ${isTopMatch ? 'bg-amber-500 text-white border-amber-600' : 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'}`}>
+                                          {(match.score * 100).toFixed(0)}%
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider">{v.skills?.length || 0} Skills</span>
+                                  </div>
+                                </div>
+                                {issue.assignedTo === v.uid ? (
+                                  <CheckCircle2 className="w-5 h-5" />
+                                ) : (
+                                  <div className="flex flex-col items-end gap-0.5">
+                                    {match && (
+                                       <span className="text-[8px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-tighter">{match.estimatedDeploymentTime} ETA</span>
+                                    )}
+                                    <Navigation className={`w-4 h-4 ${isTopMatch ? 'text-amber-500' : 'text-[var(--text-secondary)]'} opacity-50`} />
+                                  </div>
+                                )}
+                              </button>
+                              {match && isTopMatch && (
+                                <div className="px-3 py-1 bg-amber-500/5 border-l border-amber-500/20 ml-4 rounded-r-lg">
+                                  <p className="text-[9px] text-[var(--text-secondary)] font-medium leading-relaxed italic truncate">
+                                    {match.reasoning}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    <AnimatePresence>
+        {viewingPersonnel && (
+          <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 sm:p-6">
+             <motion.div 
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               exit={{ opacity: 0 }}
+               onClick={() => setViewingPersonnel(null)}
+               className="absolute inset-0 bg-black/60 backdrop-blur-md"
+             />
+             <motion.div 
+               initial={{ opacity: 0, scale: 0.95, y: 20 }}
+               animate={{ opacity: 1, scale: 1, y: 0 }}
+               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+               className="relative w-full max-w-lg bg-[var(--bg)] border border-[var(--border)] rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+             >
+                {/* Modal Header */}
+                <div className="p-6 border-b border-[var(--border)] bg-[var(--surface)] relative">
+                   <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 bg-[var(--accent)]/10 border border-[var(--accent)]/20 rounded-2xl flex items-center justify-center text-2xl font-bold text-[var(--accent)]">
+                        {viewingPersonnel.name.charAt(0)}
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-[var(--text-primary)]">{viewingPersonnel.name}</h2>
+                        <div className="flex items-center gap-2 mt-1">
+                           <span className="text-[10px] font-black uppercase tracking-widest text-[var(--accent)] bg-[var(--accent)]/10 px-2 py-0.5 rounded border border-[var(--accent)]/20">Volunteer</span>
+                           <span className="text-[10px] text-[var(--text-secondary)] font-medium">{viewingPersonnel.email}</span>
+                        </div>
+                      </div>
+                   </div>
+                   <button 
+                     onClick={() => setViewingPersonnel(null)}
+                     className="absolute top-6 right-6 p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                   >
+                      <X className="w-5 h-5" />
+                   </button>
+                </div>
+
+                {/* Modal Body */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                   <div className="space-y-2">
+                      <h4 className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em] flex items-center gap-2">
+                         <FileText className="w-3.5 h-3.5" /> Background Brief
+                      </h4>
+                      <div className="p-4 bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-sm">
+                         <p className="text-sm text-[var(--text-primary)] leading-relaxed italic">
+                            "{viewingPersonnel.bio || 'Detailed bio trace not available for this specialist.'}"
+                         </p>
+                      </div>
+                   </div>
+
+                   <div className="space-y-2">
+                      <h4 className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em] flex items-center gap-2">
+                         <ShieldCheck className="w-3.5 h-3.5" /> Verified Skills
+                      </h4>
+                      <div className="flex flex-wrap gap-1.5">
+                         {viewingPersonnel.skills?.map(skill => (
+                           <span key={skill} className="px-3 py-1 bg-[var(--surface)] border border-[var(--border)] rounded-lg text-[11px] font-bold text-[var(--text-primary)] capitalize">
+                             {skill}
+                           </span>
+                         ))}
+                      </div>
+                   </div>
+
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <h4 className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em]">Contact</h4>
+                        <div className="p-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-xs font-bold text-[var(--text-primary)]">
+                           {viewingPersonnel.phone || 'N/A'}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <h4 className="text-[10px] font-black text-[var(--text-secondary)] uppercase tracking-[0.2em]">Availability</h4>
+                        <div className="p-3 bg-[var(--surface)] border border-[var(--border)] rounded-xl text-xs font-bold text-emerald-500 uppercase">
+                           {viewingPersonnel.availability || 'Immediate'}
+                        </div>
+                      </div>
+                   </div>
+                </div>
+
+                <div className="p-6 bg-[var(--surface)] border-t border-[var(--border)] flex gap-3">
+                   <button 
+                     onClick={() => setViewingPersonnel(null)}
+                     className="flex-1 py-3 bg-[var(--bg)] border border-[var(--border)] rounded-xl text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                   >
+                     Close Info
+                   </button>
+                   {issue.assignedTo !== viewingPersonnel.uid && (
+                     <button 
+                       onClick={() => {
+                          handleDeploy(viewingPersonnel.uid);
+                          setViewingPersonnel(null);
+                       }}
+                       className="flex-[2] py-3 bg-[var(--accent)] text-white rounded-xl text-xs font-bold shadow-lg hover:opacity-90 transition-opacity"
+                     >
+                       Confirm Deployment
+                     </button>
+                   )}
+                </div>
+             </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -4,11 +4,10 @@ import { Sidebar } from './components/Sidebar';
 import { IssueFeed } from './components/IssueFeed';
 import { IssueDetail } from './components/IssueDetail';
 import { MapView } from './components/MapView';
-import { SummaryBar } from './components/SummaryBar';
 import { MOCK_ISSUES, AREAS } from './constants';
 import { Issue } from './types';
-import { motion, AnimatePresence } from 'motion/react';
-import { Map as MapIcon, Activity } from 'lucide-react';
+import { motion, AnimatePresence, animate } from 'motion/react';
+import { Map as MapIcon, Activity, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 import { subscribeToIssues } from './services/issueService';
 import { useAuth } from './contexts/AuthContext';
@@ -25,9 +24,18 @@ export default function App() {
   const [issues, setIssues] = useState<Issue[]>(MOCK_ISSUES);
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
-  const [activeView, setActiveView] = useState<'dashboard' | 'personnel' | 'reports' | 'reporter' | 'ops'>('dashboard');
+  const [activeView, setActiveView] = useState<'overview' | 'team' | 'reports' | 'reporter' | 'tasks'>('overview');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isNavCollapsed, setIsNavCollapsed] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [showLanding, setShowLanding] = useState(true);
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+
+  React.useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove('light', 'dark');
+    root.classList.add(theme);
+  }, [theme]);
 
   // Sync active view with role on initial login
   React.useEffect(() => {
@@ -35,11 +43,11 @@ export default function App() {
       const isAdmin = profile?.role === 'admin' || isAdminEmail(user?.email);
       
       if (isAdmin) {
-        setActiveView('dashboard');
+        setActiveView('overview');
       } else if (profile?.role === 'reporter') {
         setActiveView('reporter');
       } else if (profile?.role === 'volunteer') {
-        setActiveView('ops');
+        setActiveView('tasks');
       }
     }
   }, [profile, user]);
@@ -80,8 +88,8 @@ export default function App() {
   if (loading) {
      return (
        <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center">
-         <Activity className="w-8 h-8 text-emerald-500 animate-pulse mb-4" />
-         <div className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Calibrating Telemetry...</div>
+         <Activity className="w-8 h-8 text-slate-400 animate-pulse mb-4" />
+         <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Getting latest updates...</div>
        </div>
      );
   }
@@ -99,24 +107,82 @@ export default function App() {
   const handleSelectArea = (id: string | null) => {
     setSelectedAreaId(id);
     setSelectedIssue(null); 
-    setMapCenter([26.87, 80.95]);
-    setMapZoom(13);
+    
+    let targetCenter: [number, number] = [26.87, 80.95];
+    let targetZoom = 13;
+
+    if (!id && issues.length > 0) {
+      const lats = issues.map(i => i.coordinates.lat);
+      const lngs = issues.map(i => i.coordinates.lng);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      const minLng = Math.min(...lngs);
+      const maxLng = Math.max(...lngs);
+      
+      targetCenter = [(minLat + maxLat) / 2, (minLng + maxLng) / 2];
+      
+      const maxSpread = Math.max(maxLat - minLat, maxLng - minLng);
+      targetZoom = 5;
+      if (maxSpread < 0.1) targetZoom = 13;
+      else if (maxSpread < 1) targetZoom = 10;
+      else if (maxSpread < 5) targetZoom = 7;
+      else if (maxSpread < 15) targetZoom = 5.5;
+    }
+
+    // "Fly Up" Animation using motion's animate function
+    animate(mapZoom, targetZoom, {
+      duration: 1.2,
+      ease: [0.16, 1, 0.3, 1], // Custom "fly-up" ease
+      onUpdate: (latest) => setMapZoom(latest)
+    });
+
+    animate(mapCenter[0], targetCenter[0], {
+      duration: 1.2,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (latest) => setMapCenter(prev => [latest, prev[1]])
+    });
+
+    animate(mapCenter[1], targetCenter[1], {
+      duration: 1.2,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (latest) => setMapCenter(prev => [prev[0], latest])
+    });
   };
 
   const handleSelectIssue = (issue: Issue) => {
     setSelectedIssue(issue);
-    setMapCenter([issue.coordinates.lat, issue.coordinates.lng]);
-    setMapZoom(15);
+    
+    // Smooth transition to selected issue
+    animate(mapZoom, 15, {
+      duration: 1,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (latest) => setMapZoom(latest)
+    });
+
+    animate(mapCenter[0], issue.coordinates.lat, {
+      duration: 1,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (latest) => setMapCenter(prev => [latest, prev[1]])
+    });
+
+    animate(mapCenter[1], issue.coordinates.lng, {
+      duration: 1,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (latest) => setMapCenter(prev => [prev[0], latest])
+    });
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] w-screen overflow-hidden bg-brand-bg relative text-slate-200 font-sans selection:bg-emerald-500/30 selection:text-emerald-200">
+    <div className={`flex flex-col h-[100dvh] w-screen overflow-hidden bg-brand-bg relative text-[var(--text-primary)] font-sans`}>
       {/* Background Layers */}
-      <div className="fixed inset-0 bg-slate-950 z-[-2] pointer-events-none" />
-      <div className="fixed inset-0 grid-pattern z-[-1] pointer-events-none opacity-20" />
-      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_10%,rgba(16,185,129,0.05)_0%,transparent_50%)] z-[-1] pointer-events-none" />
-
-      <TopNav onMenuClick={() => setIsSidebarOpen(true)} activeView={activeView} />
+      <div className="fixed inset-0 bg-brand-bg z-[-2] pointer-events-none transition-colors duration-500" />
+      
+      <TopNav 
+        onMenuClick={() => setIsSidebarOpen(true)} 
+        activeView={activeView} 
+        theme={theme}
+        onThemeToggle={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      />
       
       <div className="flex flex-1 overflow-hidden relative z-10 w-full lg:flex-row flex-col">
         <Sidebar 
@@ -133,16 +199,22 @@ export default function App() {
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
           issues={issues}
+          collapsed={isNavCollapsed}
+          onToggleCollapse={() => setIsNavCollapsed(!isNavCollapsed)}
         />
         
         <main className="flex-1 overflow-hidden relative flex flex-col">
-          {activeView === 'dashboard' ? (
+          {activeView === 'overview' ? (
             <div className="flex-1 flex flex-col overflow-hidden w-full relative">
-              <SummaryBar issues={filteredIssues} />
-              
               <div className="flex-1 flex flex-col lg:flex-row overflow-hidden w-full">
                 {/* Map Column - Optimized height on mobile */}
-                <div className="h-[320px] lg:h-full lg:flex-1 relative border-b lg:border-b-0 lg:border-l border-white/5 bg-slate-950 overflow-hidden order-first lg:order-last">
+                <div className="h-[320px] lg:h-full lg:flex-1 relative border-b lg:border-b-0 lg:border-l border-[var(--border)] bg-brand-bg overflow-hidden order-first lg:order-last">
+                  <button 
+                    onClick={() => setIsPanelOpen(!isPanelOpen)}
+                    className="absolute top-4 left-4 z-[500] bg-[var(--surface)]/90 backdrop-blur-md border border-[var(--border)] p-2.5 rounded-xl shadow-lg hidden lg:flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition-all"
+                  >
+                    {isPanelOpen ? <PanelLeftClose className="w-5 h-5 pointer-events-none" /> : <PanelLeftOpen className="w-5 h-5 pointer-events-none" />}
+                  </button>
                   <MapView 
                     issues={filteredIssues}
                     onSelectIssue={handleSelectIssue}
@@ -157,7 +229,11 @@ export default function App() {
                 </div>
 
                 {/* List / Detail Column - Flexible below map on mobile */}
-                <div className="flex-1 lg:w-[410px] lg:shrink-0 lg:flex-none flex flex-col bg-slate-950 lg:bg-slate-900/40 relative overflow-hidden lg:border-r border-white/5">
+                <div 
+                  className={`flex-1 transition-all duration-300 ease-in-out lg:shrink-0 lg:flex-none flex flex-col bg-brand-bg lg:bg-transparent relative overflow-hidden lg:border-r border-[var(--border)] ${
+                    isPanelOpen ? 'lg:w-[410px] opacity-100' : 'lg:w-0 lg:opacity-0'
+                  }`}
+                >
                   <AnimatePresence mode="wait">
                     {!selectedIssue ? (
                       <motion.div 
@@ -182,14 +258,14 @@ export default function App() {
                         exit={{ opacity: 0, x: 20 }}
                         className="flex-1 flex flex-col overflow-hidden relative"
                       >
-                        <div className="p-3 border-b border-white/5 bg-slate-900/20 flex items-center justify-between shrink-0">
+                        <div className="p-4 border-b border-[var(--border)] bg-[var(--surface)]/50 backdrop-blur-md flex items-center justify-between shrink-0">
                           <button 
                             onClick={() => setSelectedIssue(null)}
-                            className="flex items-center gap-2 text-[10px] font-bold text-slate-500 hover:text-white uppercase tracking-widest transition-colors"
+                            className="flex items-center gap-2 text-[12px] font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                           >
-                            <span className="text-base leading-none">←</span> Back to signals
+                            <span className="text-lg leading-none">←</span> Back to list
                           </button>
-                          <div className="text-[9px] font-mono text-emerald-500/40 uppercase">Analysis engine running</div>
+                          <div className="text-[10px] font-medium text-[var(--text-secondary)] opacity-60">Getting details</div>
                         </div>
                         <IssueDetail issue={selectedIssue} />
                       </motion.div>
@@ -200,25 +276,25 @@ export default function App() {
             </div>
           ) : activeView === 'reporter' ? (
             <ReportIssue />
-          ) : activeView === 'ops' ? (
+          ) : activeView === 'tasks' ? (
             <VolunteerView />
-          ) : activeView === 'personnel' ? (
+          ) : activeView === 'team' ? (
             <PersonnelManager />
           ) : (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center p-12 max-w-sm">
-                <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-emerald-500/20">
-                  <Activity className="w-8 h-8 text-emerald-500 animate-pulse" />
+                <div className="w-16 h-16 bg-slate-100 rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-6">
+                  <Activity className="w-8 h-8 text-slate-400" />
                 </div>
-                <h2 className="text-xl font-sans font-bold text-white mb-2 decoration-emerald-500/30 underline underline-offset-8">System Module Offline</h2>
-                <p className="text-slate-500 text-sm leading-relaxed mb-8">
-                  The <span className="text-slate-300 font-mono italic">{activeView}</span> coordination engine is currently undergoing maintenance or initialization.
+                <h2 className="text-xl font-sans font-bold text-[var(--text-primary)] mb-2">Section Unavailable</h2>
+                <p className="text-[var(--text-secondary)] text-sm leading-relaxed mb-8">
+                  The <span className="font-medium">{activeView}</span> section is currently undergoing maintenance.
                 </p>
                 <button 
-                  onClick={() => setActiveView('dashboard')}
-                  className="w-full py-3 bg-emerald-500/10 text-emerald-500 rounded border border-emerald-500/20 text-xs font-bold uppercase tracking-[0.2em] hover:bg-emerald-500/20 transition-all"
+                  onClick={() => setActiveView('overview')}
+                  className="w-full py-3 bg-[var(--text-primary)] text-[var(--text-inverse)] rounded-full text-sm font-semibold hover:opacity-90 transition-opacity shadow-sm"
                 >
-                  Return to Command
+                  Return to Overview
                 </button>
               </div>
             </div>

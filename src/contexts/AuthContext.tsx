@@ -24,7 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const data = docSnap.data() as UserProfile;
-      const isAdminEmail = email?.toLowerCase() === 'luv.sarkari@gmail.com';
+      const isAdminEmail = email?.toLowerCase() === 'luv.sarkari@gmail.com' || email?.toLowerCase() === 'annoyinglav@gmail.com';
       
       if (isAdminEmail && data.role !== 'admin') {
         await updateDoc(docRef, { role: 'admin' });
@@ -58,7 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const docRef = doc(db, 'users', user.uid);
       const docSnap = await getDoc(docRef);
       
-      const isAdminEmail = user.email?.toLowerCase() === 'luv.sarkari@gmail.com';
+      const isAdminEmail = user.email?.toLowerCase() === 'luv.sarkari@gmail.com' || user.email?.toLowerCase() === 'annoyinglav@gmail.com';
       
       if (!docSnap.exists()) {
         const newProfile: UserProfile = {

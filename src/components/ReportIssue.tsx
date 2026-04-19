@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Camera, MapPin, Send, AlertCircle, CheckCircle2, Loader2, Users, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-import { analyzeSignal, StructuredSignal } from '../services/geminiService';
+import { analyzeSignal, StructuredSignal } from '../services/aiService';
 import { submitReport } from '../services/issueService';
 import { getNearestArea } from '../lib/utils';
 import { AREAS } from '../constants';
@@ -375,15 +375,8 @@ export const ReportIssue: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl space-y-2">
-                      <div className="flex items-center gap-2 text-emerald-500">
-                        <Activity className="w-3 h-3" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest">Recommended Action</span>
-                      </div>
-                      <p className="text-sm text-slate-300 leading-relaxed italic">"{aiAnalysis.aiRecommendation}"</p>
-                    </div>
 
+                  <div className="space-y-4">
                     <div className="p-4 bg-rose-500/5 border border-rose-500/10 rounded-2xl space-y-2">
                       <div className="flex items-center gap-2 text-rose-500">
                         <AlertCircle className="w-3 h-3" />
@@ -392,6 +385,7 @@ export const ReportIssue: React.FC = () => {
                       <p className="text-sm text-slate-300 leading-relaxed">"{aiAnalysis.riskMessage}"</p>
                     </div>
                   </div>
+
 
                   <div className="pt-4 flex gap-3">
                     <button 

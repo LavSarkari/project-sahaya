@@ -1,0 +1,123 @@
+mutation CreateDemoData @transaction @auth(level: USER, insecureReason: "This operation is for seeding data and should only be run by authenticated users with appropriate permissions during development or setup.") {
+  user_insertMany(
+    data: [
+      {
+        id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+        email: "volunteer1@example.com",
+        role: "volunteer",
+        name: "Alice Volunteer",
+        skills: ["Medical Aid", "Search and Rescue"],
+        status: "active",
+        latitude: 34.0522,
+        longitude: -118.2437,
+      },
+      {
+        id: "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12",
+        email: "volunteer2@example.com",
+        role: "volunteer",
+        name: "Bob Volunteer",
+        skills: ["Logistics", "Shelter Management"],
+        status: "inactive",
+        latitude: 34.0000,
+        longitude: -118.0000,
+      },
+      {
+        id: "c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13",
+        email: "reporter1@example.com",
+        role: "reporter",
+        name: "Charlie Reporter",
+        status: "active",
+      },
+    ]
+  )
+  area_insertMany(
+    data: [
+      {
+        id: "a1eebc99-9c0b-4ef8-bb6d-6bb9bd380a21",
+        name: "Downtown LA",
+        description: "Central business district",
+        boundaryCoordinates: ["34.0500,-118.2500", "34.0600,-118.2400", "34.0400,-118.2300"],
+      },
+      {
+        id: "a1eebc99-9c0b-4ef8-bb6d-6bb9bd380a22",
+        name: "Hollywood Hills",
+        description: "Residential area in the hills",
+        boundaryCoordinates: ["34.1000,-118.3500", "34.1100,-118.3400", "34.0900,-118.3300"],
+      },
+    ]
+  )
+  issue_insertMany(
+    data: [
+      {
+        id: "d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a31",
+        title: "Flooding on Main Street",
+        location: "Main Street, Downtown LA",
+        areaId: "a1eebc99-9c0b-4ef8-bb6d-6bb9bd380a21",
+        peopleAffected: 50,
+        priority: "High",
+        category: "Flood",
+        latitude: 34.0522,
+        longitude: -118.2437,
+        timestamp: "2024-03-08T10:00:00Z",
+        reporterId: "c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13",
+        aiRecommendation: "Evacuate low-lying areas, deploy sandbags.",
+        confidence: 0.95,
+        eta: "2024-03-08T14:00:00Z",
+        riskMessage: "Significant property damage and potential loss of life.",
+      },
+      {
+        id: "e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a32",
+        title: "Brush fire near Hollywood Sign",
+        location: "Griffith Park, Hollywood Hills",
+        areaId: "a1eebc99-9c0b-4ef8-bb6d-6bb9bd380a22",
+        peopleAffected: 100,
+        priority: "Critical",
+        category: "Wildfire",
+        latitude: 34.1200,
+        longitude: -118.3000,
+        timestamp: "2024-03-08T11:30:00Z",
+        reporterId: "c0eebc99-9c0b-4ef8-bb6d-6bb9bd380a13",
+        aiRecommendation: "Deploy air support, establish fire breaks, issue evacuation orders.",
+        confidence: 0.98,
+        eta: "2024-03-09T08:00:00Z",
+        riskMessage: "Rapid spread, threat to homes and infrastructure.",
+      },
+    ]
+  )
+  assignment_insertMany(
+    data: [
+      {
+        issueId: "d0eebc99-9c0b-4ef8-bb6d-6bb9bd380a31",
+        volunteerId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+        assignedAt: "2024-03-08T10:30:00Z",
+        status: "assigned",
+      },
+      {
+        issueId: "e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a32",
+        volunteerId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+        assignedAt: "2024-03-08T12:00:00Z",
+        status: "assigned",
+      },
+    ]
+  )
+  skill_insertMany(
+    data: [
+      {
+        name: "Medical Aid",
+        description: "Providing first aid and basic medical care",
+      },
+      {
+        name: "Search and Rescue",
+        description: "Locating and extracting individuals in distress",
+      },
+      {
+        name: "Logistics",
+        description: "Managing supplies, transportation, and coordination",
+      },
+      {
+        name: "Shelter Management",
+        description: "Operating and organizing temporary shelters",
+      },
+    ]
+  )
+}

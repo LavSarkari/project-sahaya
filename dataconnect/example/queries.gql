@@ -1,0 +1,48 @@
+query ListAllAreas @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public as it retrieves general area information.") {
+  areas {
+    id
+    name
+    description
+    boundaryCoordinates
+  }
+}
+
+mutation CreateNewIssue($title: String!, $location: String!, $areaId: UUID!, $peopleAffected: Int!, $priority: String!, $category: String!, $latitude: Float!, $longitude: Float!, $timestamp: Timestamp!) @auth(level: USER) {
+  issue_insert(data: {
+    title: $title,
+    location: $location,
+    areaId: $areaId,
+    peopleAffected: $peopleAffected,
+    priority: $priority,
+    category: $category,
+    latitude: $latitude,
+    longitude: $longitude,
+    timestamp: $timestamp,
+    reporterId_expr: "auth.uid"
+  }) {
+    id
+  }
+}
+
+query MyReportedIssues @auth(level: USER) {
+  issues(where: {reporterId: {eq_expr: "auth.uid"}}) {
+    id
+    title
+    location
+    priority
+    category
+    timestamp
+    area {
+      name
+    }
+  }
+}
+
+mutation UpdateMySkills($skills: [String!]) @auth(level: USER) {
+  user_update(
+    key: {id_expr: "auth.uid"},
+    data: {skills_update: {add: $skills}}
+  ) {
+    id
+  }
+}

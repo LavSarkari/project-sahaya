@@ -1,4 +1,6 @@
+import "dotenv/config";
 import express from "express";
+
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -15,7 +17,13 @@ async function startServer() {
 
   // API Routes
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
+    res.json({ 
+      status: "operational",
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+      memory: process.memoryUsage(),
+      environment: process.env.NODE_ENV || 'development'
+    });
   });
 
   // Vite middleware for development

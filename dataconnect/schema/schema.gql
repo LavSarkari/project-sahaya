@@ -1,0 +1,46 @@
+type User @table {
+  email: String!
+  role: String!
+  name: String!
+  skills: [String]
+  status: String
+  activeTaskId: UUID
+  latitude: Float
+  longitude: Float
+}
+
+type Issue @table {
+  title: String!
+  location: String!
+  area: Area!
+  peopleAffected: Int!
+  priority: String!
+  category: String!
+  latitude: Float!
+  longitude: Float!
+  timestamp: Timestamp!
+  reporter: User
+  aiRecommendation: String
+  confidence: Float
+  eta: Timestamp
+  riskMessage: String
+}
+
+type Area @table {
+  name: String!
+  description: String
+  boundaryCoordinates: [String]
+}
+
+type Assignment @table(key: ["issue", "volunteer"]) {
+  issue: Issue!
+  volunteer: User!
+  assignedAt: Timestamp!
+  status: String
+  completedAt: Timestamp
+}
+
+type Skill @table {
+  name: String!
+  description: String
+}

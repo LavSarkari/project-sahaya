@@ -49,7 +49,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() &&
-        (request.auth.token.email.lower() == "luv.sarkari@gmail.com" ||
+        (request.auth.token.email.lower() in ["luv.sarkari@gmail.com", "annoyinglav@gmail.com"] ||
          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
     }
@@ -68,7 +68,7 @@ service cloud.firestore {
 
     // Domain Validators
     function isValidUser(data) {
-      return hasOnlyAllowedFields(['uid', 'email', 'role', 'name', 'skills', 'bio', 'applicationStatus', 'status', 'activeTaskId', 'coordinates']) &&
+      return hasOnlyAllowedFields(['uid', 'email', 'role', 'name', 'skills', 'bio', 'applicationStatus', 'status', 'activeTaskId', 'coordinates', 'phone', 'address', 'availability', 'emergencyContact']) &&
              data.uid is string &&
              isValidEmail(data.email) &&
              data.role in ['admin', 'volunteer', 'reporter'] &&
@@ -78,19 +78,28 @@ service cloud.firestore {
              (!('applicationStatus' in data) || data.applicationStatus in ['none', 'pending', 'approved', 'rejected']) &&
              (!('status' in data) || data.status in ['active', 'standby', 'en-route']) &&
              (!('activeTaskId' in data) || (data.activeTaskId is string || data.activeTaskId == null)) &&
-             (!('coordinates' in data) || (data.coordinates is map && data.coordinates.lat is number && data.coordinates.lng is number));
+             (!('coordinates' in data) || (data.coordinates is map && data.coordinates.lat is number && data.coordinates.lng is number)) &&
+             (!('phone' in data) || (data.phone is string && data.phone.size() < 20)) &&
+             (!('address' in data) || (data.address is string && data.address.size() < 200)) &&
+             (!('availability' in data) || (data.availability in ['immediate', 'scheduled', 'on-call'])) &&
+             (!('emergencyContact' in data) || (data.emergencyContact is string && data.emergencyContact.size() < 50));
     }
 
     function isValidApplication(data) {
-      return data.keys().hasAll(['id', 'name', 'email', 'skills', 'bio', 'idProofText', 'status', 'timestamp']) &&
+      return data.keys().hasAll(['id', 'name', 'email', 'skills', 'bio', 'idProofText', 'phone', 'address', 'availability', 'status', 'timestamp']) &&
              data.id == request.auth.uid &&
              data.email == request.auth.token.email &&
              data.skills is list &&
              data.bio is string && data.bio.size() < 2000 &&
              data.idProofText is string && data.idProofText.size() < 500 &&
+             data.phone is string && data.phone.size() < 20 &&
+             data.address is string && data.address.size() < 200 &&
+             data.availability in ['immediate', 'scheduled', 'on-call'] &&
+             (!('emergencyContact' in data) || (data.emergencyContact is string && data.emergencyContact.size() < 50)) &&
              data.status == 'pending' &&
              data.timestamp is string;
     }
+
 
     function isValidIssue(data) {
       return data.keys().hasAll(['title', 'location', 'areaId', 'peopleAffected', 'priority', 'category', 'status', 'coordinates', 'timestamp']) &&
@@ -104,14 +113,17 @@ service cloud.firestore {
              (!('aiRecommendation' in data) || (data.aiRecommendation is string && data.aiRecommendation.size() < 2000)) &&
              (!('confidence' in data) || (data.confidence is number && data.confidence >= 0 && data.confidence <= 1)) &&
              (!('riskMessage' in data) || (data.riskMessage is string && data.riskMessage.size() < 1000)) &&
+             (!('signalCount' in data) || (data.signalCount is number)) &&
+             (!('sourceDescriptions' in data) || (data.sourceDescriptions is list && data.sourceDescriptions.size() <= 50)) &&
              data.coordinates is map &&
              data.coordinates.lat is number &&
              data.coordinates.lng is number &&
              data.timestamp is string &&
              (!('assignedTo' in data) || (data.assignedTo is string)) &&
              (!('resolvedBy' in data) || (data.resolvedBy is string)) &&
-             data.keys().hasOnly(['id', 'title', 'location', 'areaId', 'peopleAffected', 'priority', 'category', 'status', 'aiRecommendation', 'confidence', 'eta', 'riskMessage', 'coordinates', 'timestamp', 'assignedTo', 'resolvedBy']);
+             data.keys().hasOnly(['id', 'title', 'location', 'areaId', 'peopleAffected', 'priority', 'category', 'status', 'aiRecommendation', 'confidence', 'eta', 'riskMessage', 'coordinates', 'timestamp', 'assignedTo', 'resolvedBy', 'signalCount', 'sourceDescriptions']);
     }
+
 
     // ===============================================================
     // Rules
@@ -125,7 +137,7 @@ service cloud.firestore {
       // Users can read and write their own profile
       allow get: if isAuthenticated() && isValidId(userId);
       allow list: if isAdmin();
-      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'reporter' || isAdmin());
+      allow create: if isValidId(userId) && isValidUser(request.resource.data) && ((isOwner(userId) && (request.resource.data.role == 'reporter' || isAdmin())) || isAdmin());
       allow update: if isValidId(userId) && ((isOwner(userId) && isValidUser(request.resource.data) && (isAdmin() || request.resource.data.role == resource.data.role)) || isAdmin());
     }
 

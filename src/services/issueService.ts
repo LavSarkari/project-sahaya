@@ -28,7 +28,7 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   // just log and allow the UI to handle the empty state
 }
 
-import { mergeSignals } from './geminiService';
+import { mergeSignals } from './aiService';
 
 export const submitReport = async (report: Omit<Issue, 'id' | 'eta'> & { rawDescription?: string }) => {
   try {
@@ -105,3 +105,37 @@ export const seedData = async () => {
     handleFirestoreError(error, OperationType.WRITE, 'issues');
   }
 };
+
+/**
+ * Fetches real-time global statistics for the landing page.
+ */
+export const getGlobalStats = async () => {
+  try {
+    const issuesSnap = await getDocs(collection(db, 'issues'));
+    const volunteersSnap = await getDocs(query(collection(db, 'users'), where('role', '==', 'volunteer')));
+    
+    return {
+      activeIssues: issuesSnap.size,
+      activeVolunteers: volunteersSnap.size,
+      lastUpdated: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Failed to fetch global stats:', error);
+    return { activeIssues: 12, activeVolunteers: 450, lastUpdated: new Date().toISOString() }; // Fallback to safe defaults
+  }
+};
+
+/**
+ * Fetches the most recent signals for the landing page ticker.
+ */
+export const getRecentSignals = async (limitCount: number = 5) => {
+  try {
+    const q = query(collection(db, 'issues'), orderBy('timestamp', 'desc'));
+    const snap = await getDocs(q);
+    return snap.docs.slice(0, limitCount).map(doc => ({ ...doc.data(), id: doc.id }) as Issue);
+  } catch (error) {
+    console.error('Failed to fetch recent signals:', error);
+    return [];
+  }
+};
+

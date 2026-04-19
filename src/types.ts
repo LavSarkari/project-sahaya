@@ -60,7 +60,12 @@ export interface UserProfile {
     lat: number;
     lng: number;
   };
+  phone?: string;
+  address?: string;
+  availability?: 'immediate' | 'scheduled' | 'on-call';
+  emergencyContact?: string;
 }
+
 
 export interface VolunteerApplication {
   id: string; // Maps to User UID
@@ -69,9 +74,14 @@ export interface VolunteerApplication {
   skills: string[];
   bio: string;
   idProofText: string;
+  phone: string;
+  address: string;
+  availability: 'immediate' | 'scheduled' | 'on-call';
+  emergencyContact?: string;
   status: 'pending' | 'approved' | 'rejected';
   timestamp: string;
 }
+
 
 export interface ResponseTeam {
   id: string; // This will map to UserProfile.uid for volunteers
