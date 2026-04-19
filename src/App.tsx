@@ -122,7 +122,13 @@ export default function App() {
 
   // Show Landing Page first
   if (showLanding && !user) {
-    return <LandingPage onGetStarted={() => setShowLanding(false)} />;
+    return (
+      <LandingPage 
+        onGetStarted={() => setShowLanding(false)} 
+        theme={theme}
+        onThemeToggle={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      />
+    );
   }
 
   // Auth Protection
