@@ -7,7 +7,7 @@ import { MapView } from './components/MapView';
 import { MOCK_ISSUES, AREAS } from './constants';
 import { Issue } from './types';
 import { motion, AnimatePresence, animate } from 'motion/react';
-import { Map as MapIcon, Activity, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Map as MapIcon, Activity, PanelLeftClose, PanelLeftOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { subscribeToIssues } from './services/issueService';
 import { useAuth } from './contexts/AuthContext';
@@ -126,7 +126,6 @@ export default function App() {
       <LandingPage 
         onGetStarted={() => setShowLanding(false)} 
         theme={theme}
-        onThemeToggle={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       />
     );
   }
@@ -241,11 +240,14 @@ export default function App() {
               <div className="flex-1 flex flex-col lg:flex-row overflow-hidden w-full">
                 {/* Map Column - Optimized height on mobile */}
                 <div className="h-[320px] lg:h-full lg:flex-1 relative border-b lg:border-b-0 lg:border-l border-[var(--border)] bg-brand-bg overflow-hidden order-first lg:order-last">
+                  {/* Collapse Bar Handle */}
                   <button 
                     onClick={() => setIsPanelOpen(!isPanelOpen)}
-                    className="absolute top-4 left-4 z-[500] bg-[var(--surface)]/90 backdrop-blur-md border border-[var(--border)] p-2.5 rounded-xl shadow-lg hidden lg:flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent)] transition-all"
+                    className={`absolute left-0 top-1/2 -translate-y-1/2 z-[500] w-[14px] hover:w-5 h-24 bg-[var(--surface)] hover:bg-[var(--accent)] border border-l-0 border-[var(--border)] rounded-r-xl shadow-xl hidden lg:flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-inverse)] transition-all duration-300 group cursor-pointer`}
                   >
-                    {isPanelOpen ? <PanelLeftClose className="w-5 h-5 pointer-events-none" /> : <PanelLeftOpen className="w-5 h-5 pointer-events-none" />}
+                    <div className={`transition-transform duration-500 ${isPanelOpen ? 'rotate-0' : 'rotate-180'}`}>
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </div>
                   </button>
                   <MapView 
                     issues={filteredIssues}
