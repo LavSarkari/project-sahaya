@@ -40,8 +40,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
       {/* Nav */}
       <nav className="relative z-50 flex items-center justify-between px-6 md:px-12 py-8 max-w-[1400px] mx-auto">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-[var(--surface)] rounded-2xl flex items-center justify-center shadow-lg shadow-[var(--accent)]/20 border border-[var(--border)] overflow-hidden">
-            <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
+          <div className="w-12 h-12 bg-white/5 backdrop-blur-2xl rounded-2xl flex items-center justify-center shadow-2xl shadow-[var(--accent)]/10 border border-white/10 overflow-hidden relative group">
+            <div className="absolute inset-0 bg-[var(--accent)]/10 blur-[20px] rounded-full scale-50 group-hover:scale-100 transition-transform duration-700" />
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain relative z-10 p-2" />
           </div>
           <div>
             <h1 className="text-2xl font-black tracking-tight text-white leading-none">Sahaya</h1>

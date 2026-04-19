@@ -169,8 +169,9 @@ export const LoginPage: React.FC = () => {
              transition={{ duration: 0.8 }}
              className="flex flex-col items-center"
            >
-              <div className="w-24 h-24 bg-[var(--surface)] rounded-[2rem] flex items-center justify-center mb-8 shadow-lg overflow-hidden border border-[var(--border)]">
-                <img src="/logo.png" alt="Sahaya Logo" className="w-full h-full object-cover" />
+              <div className="w-28 h-28 bg-[var(--surface)]/60 backdrop-blur-2xl rounded-[2.5rem] flex items-center justify-center mb-8 shadow-2xl overflow-hidden border border-[var(--border)] relative group">
+                <div className="absolute inset-0 bg-[var(--accent)]/10 blur-[40px] rounded-full scale-0 group-hover:scale-100 transition-transform duration-1000" />
+                <img src="/logo.png" alt="Sahaya Logo" className="w-full h-full object-contain relative z-10 p-4" />
               </div>
               <h1 className="text-5xl font-extrabold tracking-tight mb-6">
                 Welcome to Sahaya
