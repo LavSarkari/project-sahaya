@@ -1,6 +1,6 @@
 import React from 'react';
 import { Area, Issue } from '../types';
-import { MapPin, LayoutGrid, Users2, FileText, ChevronRight, Circle, Sparkles, Send, AlertTriangle, Users, Droplets, Shield, Heart, Package, ChevronsLeft, ChevronsRight, Settings } from 'lucide-react';
+import { MapPin, LayoutGrid, Users2, FileText, ChevronRight, Circle, Sparkles, Send, AlertTriangle, Users, Droplets, Shield, Heart, Package, ChevronsLeft, ChevronsRight, Settings, Brain } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { isAdminEmail } from '../lib/utils';
@@ -8,8 +8,8 @@ import { isAdminEmail } from '../lib/utils';
 interface SidebarProps {
   selectedAreaId: string | null;
   onSelectArea: (id: string | null) => void;
-  activeView: 'overview' | 'team' | 'reports' | 'reporter' | 'tasks' | 'settings';
-  onViewChange: (view: 'overview' | 'team' | 'reports' | 'reporter' | 'tasks' | 'settings') => void;
+  activeView: string;
+  onViewChange: (view: string) => void;
   isOpen: boolean;
   onClose: () => void;
   issues: Issue[];
@@ -106,32 +106,52 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               onClick={() => onViewChange('overview')}
               title="Overview"
-              className={`w-full flex items-center ${collapsed ? 'justify-center' : ''} gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
-                activeView === 'overview' ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)]'
+              className={`w-full flex items-center ${collapsed ? 'justify-center py-3' : 'px-3 py-2.5 gap-3'} rounded-xl text-sm font-semibold transition-all ${
+                activeView === 'overview' ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-lg shadow-black/20' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)]'
               }`}
             >
-              <LayoutGrid className="w-4 h-4 shrink-0" />
+              <LayoutGrid className={`${collapsed ? 'w-5 h-5' : 'w-4 h-4'} shrink-0`} />
               {!collapsed && 'Overview'}
             </button>
             <button
               onClick={() => onViewChange('team')}
               title="Team Directory"
-              className={`w-full flex items-center ${collapsed ? 'justify-center' : ''} gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
-                activeView === 'team' ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)]'
+              className={`w-full flex items-center ${collapsed ? 'justify-center py-3' : 'px-3 py-2.5 gap-3'} rounded-xl text-sm font-semibold transition-all ${
+                activeView === 'team' ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-lg shadow-black/20' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)]'
               }`}
             >
-              <Users2 className="w-4 h-4 shrink-0" />
+              <Users2 className={`${collapsed ? 'w-5 h-5' : 'w-4 h-4'} shrink-0`} />
               {!collapsed && 'Team Directory'}
             </button>
             <button
               onClick={() => onViewChange('reports')}
               title="Reports"
-              className={`w-full flex items-center ${collapsed ? 'justify-center' : ''} gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
-                activeView === 'reports' ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)]'
+              className={`w-full flex items-center ${collapsed ? 'justify-center py-3' : 'px-3 py-2.5 gap-3'} rounded-xl text-sm font-semibold transition-all ${
+                activeView === 'reports' ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-lg shadow-black/20' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)]'
               }`}
             >
-              <FileText className="w-4 h-4 shrink-0" />
+              <FileText className={`${collapsed ? 'w-5 h-5' : 'w-4 h-4'} shrink-0`} />
               {!collapsed && 'Reports'}
+            </button>
+            <button
+              onClick={() => onViewChange('logistics')}
+              title="Logistics Hub"
+              className={`w-full flex items-center ${collapsed ? 'justify-center py-3' : 'px-3 py-2.5 gap-3'} rounded-xl text-sm font-semibold transition-all ${
+                activeView === 'logistics' ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-lg shadow-black/20' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)]'
+              }`}
+            >
+              <Package className={`${collapsed ? 'w-5 h-5' : 'w-4 h-4'} shrink-0`} />
+              {!collapsed && 'Logistics Hub'}
+            </button>
+            <button
+              onClick={() => onViewChange('allocation')}
+              title="Strategic Allocation"
+              className={`w-full flex items-center ${collapsed ? 'justify-center py-3' : 'px-3 py-2.5 gap-3'} rounded-xl text-sm font-semibold transition-all ${
+                activeView === 'allocation' ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-lg shadow-black/20' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)]'
+              }`}
+            >
+              <Brain className={`${collapsed ? 'w-5 h-5' : 'w-4 h-4'} shrink-0`} />
+              {!collapsed && 'Allocation'}
             </button>
           </>
         )}
@@ -140,36 +160,46 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={() => onViewChange('tasks')}
             title="Field Tasks"
-            className={`w-full flex items-center ${collapsed ? 'justify-center' : ''} gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
-              activeView === 'tasks' ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)]'
+            className={`w-full flex items-center ${collapsed ? 'justify-center py-3' : 'px-3 py-2.5 gap-3'} rounded-xl text-sm font-semibold transition-all ${
+              activeView === 'tasks' ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-lg shadow-black/20' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)]'
             }`}
           >
-            <Sparkles className="w-4 h-4 shrink-0" />
+            <Sparkles className={`${collapsed ? 'w-5 h-5' : 'w-4 h-4'} shrink-0`} />
             {!collapsed && 'Field Tasks'}
           </button>
         )}
 
-        {profile?.role === 'reporter' && (
-          <button
-            onClick={() => onViewChange('reporter')}
-            title="Request Help"
-            className={`w-full flex items-center ${collapsed ? 'justify-center' : ''} gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
-              activeView === 'reporter' ? 'bg-[var(--accent)] text-white shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)] border border-transparent'
-            }`}
-          >
-            <Send className="w-4 h-4 shrink-0" />
-            {!collapsed && 'Request Help'}
-          </button>
-        )}
+          <>
+            <button
+              onClick={() => onViewChange('reporter')}
+              title="Request Help"
+              className={`w-full flex items-center ${collapsed ? 'justify-center py-3' : 'px-3 py-2.5 gap-3'} rounded-xl text-sm font-semibold transition-all ${
+                activeView === 'reporter' ? 'bg-[var(--accent)] text-slate-950 shadow-lg shadow-[var(--accent)]/10' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)] border border-transparent'
+              }`}
+            >
+              <Send className={`${collapsed ? 'w-5 h-5' : 'w-4 h-4'} shrink-0`} />
+              {!collapsed && 'Request Help'}
+            </button>
+            <button
+              onClick={() => onViewChange('volunteer-apply')}
+              title="Become a Volunteer"
+              className={`w-full flex items-center ${collapsed ? 'justify-center py-3' : 'px-3 py-2.5 gap-3'} rounded-xl text-sm font-semibold transition-all ${
+                activeView === 'volunteer-apply' ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-lg shadow-black/20' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)]'
+              }`}
+            >
+              <Heart className={`${collapsed ? 'w-5 h-5' : 'w-4 h-4'} shrink-0`} />
+              {!collapsed && 'Join Volunteer Force'}
+            </button>
+          </>
 
         <button
           onClick={() => onViewChange('settings')}
           title="Account Settings"
-          className={`w-full flex items-center ${collapsed ? 'justify-center' : ''} gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
-            activeView === 'settings' ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-sm' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)]'
+          className={`w-full flex items-center ${collapsed ? 'justify-center py-3' : 'px-3 py-2.5 gap-3'} rounded-xl text-sm font-semibold transition-all ${
+            activeView === 'settings' ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-lg shadow-black/20' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover)]'
           }`}
         >
-          <Settings className="w-4 h-4 shrink-0" />
+          <Settings className={`${collapsed ? 'w-5 h-5' : 'w-4 h-4'} shrink-0`} />
           {!collapsed && 'Settings'}
         </button>
       </div>

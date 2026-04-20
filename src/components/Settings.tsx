@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
-import { User, Mail, Shield, Lock, CheckCircle, AlertCircle, Activity, LogOut, KeyRound } from 'lucide-react';
+import { User, Mail, Shield, Lock, CheckCircle, AlertCircle, Activity, LogOut, KeyRound, Brain, ToggleLeft, ToggleRight, Zap } from 'lucide-react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+import { isAdminEmail } from '../lib/utils';
 
 export const Settings: React.FC = () => {
   const { user, profile, logout, updateUserProfile, updateUserPassword } = useAuth();
@@ -12,8 +15,40 @@ export const Settings: React.FC = () => {
   const [savingPassword, setSavingPassword] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [autopilot, setAutopilot] = useState(false);
+  const [loadingAutopilot, setLoadingAutopilot] = useState(false);
 
   const isGoogleUser = user?.providerData?.[0]?.providerId === 'google.com';
+  const isAdmin = profile?.role === 'admin' || isAdminEmail(user?.email);
+
+  // Load autopilot setting
+  useEffect(() => {
+    if (!user || !isAdmin) return;
+    const fetchSettings = async () => {
+      try {
+        const settingsDoc = await getDoc(doc(db, 'settings', 'allocation'));
+        if (settingsDoc.exists()) {
+          setAutopilot(settingsDoc.data().autopilot || false);
+        }
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      }
+    };
+    fetchSettings();
+  }, [user, isAdmin]);
+
+  const toggleAutopilot = async () => {
+    setLoadingAutopilot(true);
+    try {
+      const newValue = !autopilot;
+      await setDoc(doc(db, 'settings', 'allocation'), { autopilot: newValue }, { merge: true });
+      setAutopilot(newValue);
+      setSuccessMsg(`Allocation mode set to ${newValue ? 'Autopilot' : 'Manual'}.`);
+    } catch (err) {
+      setErrorMsg('Failed to update allocation mode.');
+    }
+    setLoadingAutopilot(false);
+  };
 
   const handleSaveProfile = async () => {
     if (!displayName.trim()) return;
@@ -213,6 +248,59 @@ export const Settings: React.FC = () => {
                 {savingPassword ? <Activity className="w-4 h-4 animate-spin" /> : 'Update Password'}
               </button>
             </form>
+          </motion.div>
+        )}
+
+        {/* Allocation Mode (Admin Only) */}
+        {isAdmin && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+            className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-6 lg:p-8 space-y-6"
+          >
+            <div className="flex items-center gap-3">
+              <Brain className="w-5 h-5 text-[var(--accent)]" />
+              <h3 className="text-lg font-bold text-[var(--text-primary)]">Allocation Mode</h3>
+            </div>
+
+            <div className="p-4 bg-[var(--bg)] border border-[var(--border)] rounded-2xl space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+                    {autopilot ? <Zap className="w-4 h-4 text-emerald-500" /> : <Shield className="w-4 h-4 text-amber-500" />}
+                    {autopilot ? 'Autopilot Active' : 'Manual Approval'}
+                  </div>
+                  <p className="text-[10px] text-[var(--text-secondary)] max-w-sm leading-relaxed">
+                    {autopilot 
+                      ? 'AI will automatically execute redeployment suggestions when confidence exceeds 85%. High-risk actions still require admin approval.'
+                      : 'All AI-suggested redeployments require manual admin approval before execution. Recommended for new deployments.'}
+                  </p>
+                </div>
+                <button
+                  onClick={toggleAutopilot}
+                  disabled={loadingAutopilot}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                    autopilot 
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/20' 
+                      : 'bg-[var(--surface)] border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  {loadingAutopilot ? (
+                    <Activity className="w-4 h-4 animate-spin" />
+                  ) : autopilot ? (
+                    <ToggleRight className="w-5 h-5" />
+                  ) : (
+                    <ToggleLeft className="w-5 h-5" />
+                  )}
+                  {autopilot ? 'ON' : 'OFF'}
+                </button>
+              </div>
+            </div>
+
+            <p className="text-[9px] text-[var(--text-secondary)] font-medium uppercase tracking-wider">
+              ⚠ Autopilot mode is experimental. Monitor allocation dashboard closely when enabled.
+            </p>
           </motion.div>
         )}
 

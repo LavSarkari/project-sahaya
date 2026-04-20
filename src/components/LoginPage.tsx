@@ -4,7 +4,8 @@ import { Send, ShieldAlert, LogIn, Activity, FileText, CheckCircle2, AlertCircle
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, addDoc, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { VolunteerApplication } from '../types';
+import { VolunteerApplication as IVolunteerApplication } from '../types';
+import { VolunteerApplication } from './VolunteerApplication';
 
 export const LoginPage: React.FC = () => {
   const { login, loginWithEmail, registerWithEmail, user, profile } = useAuth();
@@ -25,28 +26,7 @@ export const LoginPage: React.FC = () => {
     confirmPassword: ''
   });
 
-  // Application form state
-  const [appData, setAppData] = useState({
-    bio: '',
-    idProofText: '',
-    phone: '',
-    address: '',
-    availability: 'immediate' as 'immediate' | 'scheduled' | 'on-call',
-    emergencyContact: '',
-    selectedSkills: [] as string[]
-  });
 
-  const ALL_SKILLS = ['medical', 'logistics', 'search and rescue', 'communications', 'food distribution', 'social work', 'translation', 'counseling'];
-
-
-  const toggleSkill = (skill: string) => {
-    setAppData(prev => ({
-      ...prev,
-      selectedSkills: prev.selectedSkills.includes(skill) 
-        ? prev.selectedSkills.filter(s => s !== skill) 
-        : [...prev.selectedSkills, skill]
-    }));
-  };
 
   const handleGoogleLogin = async () => {
     setIsLoggingIn(true);
@@ -96,38 +76,9 @@ export const LoginPage: React.FC = () => {
   };
 
   const handleApply = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) {
-      setView('auth');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      const application: VolunteerApplication = {
-        id: user.uid,
-        name: user.displayName || 'Anonymous Applicant',
-        email: user.email || '',
-        skills: appData.selectedSkills,
-        bio: appData.bio,
-        idProofText: appData.idProofText,
-        phone: appData.phone,
-        address: appData.address,
-        availability: appData.availability,
-        emergencyContact: appData.emergencyContact,
-        status: 'pending',
-        timestamp: new Date().toISOString()
-      };
-
-
-      await setDoc(doc(db, 'volunteer_applications', user.uid), application);
-      await updateDoc(doc(db, 'users', user.uid), { applicationStatus: 'pending' });
-      setApplied(true);
-    } catch (err) {
-      console.error('Application error:', err);
-    } finally {
-      setIsSubmitting(false);
-    }
+    // This local handler is for immediate submission logic if needed, 
+    // but the component now handles its own state.
+    // We mainly need to handle the auth requirement from within the component.
   };
 
   if (profile?.applicationStatus === 'pending' || applied) {
@@ -428,222 +379,14 @@ export const LoginPage: React.FC = () => {
 
             ) : (
               /* VOLUNTEER APPLICATION VIEW */
-              <motion.div 
-                key="apply"
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                className="w-full max-w-5xl mx-auto bg-[var(--surface)]/80 backdrop-blur-2xl rounded-[32px] sm:rounded-[48px] border border-[var(--border)] shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[85vh]"
-              >
-                <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--accent)]/5 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
-                
-                {/* FIXED HEADER */}
-                <div className="relative z-10 shrink-0 p-5 sm:p-10 border-b border-[var(--border)]/50">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-2 text-center sm:text-left">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[var(--accent)]/10 border border-[var(--accent)]/20 text-[10px] font-black uppercase tracking-widest text-[var(--accent)] mb-1 sm:mb-2">
-                         <Award className="w-3 h-3" /> Professional Network
-                      </div>
-                      <h2 className="text-2xl sm:text-4xl font-black tracking-tighter">Volunteer Application</h2>
-                      <p className="text-[var(--text-secondary)] text-[11px] sm:text-sm font-medium">Step up to help your community coordinate and recover.</p>
-                    </div>
-                    <button 
-                      onClick={() => setView('welcome')}
-                      className="self-center sm:self-start px-4 py-2 bg-[var(--bg)] hover:bg-[var(--border)] rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[10px] sm:text-xs font-bold transition-all shadow-sm flex items-center gap-2 border border-[var(--border)]"
-                    >
-                      ← Cancel
-                    </button>
-                  </div>
-                </div>
-
-                {/* SCROLLABLE CONTENT AREA */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-8 sm:px-12 py-10 space-y-10">
-                  {!user && (
-                    <div className="p-5 bg-blue-500/5 border border-blue-500/10 rounded-[28px] flex items-center gap-4 group">
-                      <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center shrink-0">
-                        <ShieldAlert className="w-6 h-6 text-blue-500" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-[var(--text-primary)]">Authentication Required</p>
-                        <p className="text-xs text-[var(--text-secondary)] font-medium">
-                          You must <button onClick={() => setView('auth')} className="text-blue-500 hover:underline font-bold">sign in</button> before submitting your application.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  <form onSubmit={handleApply} className="space-y-10 pb-8">
-                    {/* Capabilities Section */}
-                    <div className="space-y-6">
-                      <div className="flex items-center gap-3 px-1">
-                        <Wrench className="w-4 h-4 text-[var(--accent)]" />
-                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">Operational Capabilities</h3>
-                      </div>
-                      <div className="flex flex-wrap gap-2.5">
-                        {ALL_SKILLS.map(skill => (
-                          <button
-                            key={skill}
-                            type="button"
-                            onClick={() => toggleSkill(skill)}
-                            className={`px-4 py-2.5 rounded-2xl border text-xs font-bold capitalize transition-all duration-300 flex items-center gap-2 ${
-                              appData.selectedSkills.includes(skill)
-                                ? 'bg-[var(--accent)] border-[var(--accent)] text-white shadow-[0_0_20px_-5px_var(--accent)] scale-[1.05]'
-                                : 'bg-[var(--bg)] border-[var(--border)] text-[var(--text-secondary)] hover:border-[var(--text-secondary)]/40 hover:bg-[var(--hover)]'
-                            }`}
-                          >
-                            {appData.selectedSkills.includes(skill) && <CheckCircle2 className="w-3 h-3" />}
-                            {skill}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Identification & Contact Group */}
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="space-y-2 col-span-2 md:col-span-1">
-                        <label className="text-xs font-bold text-[var(--text-secondary)] ml-1">Phone Number</label>
-                        <div className="relative group">
-                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)] group-focus-within:text-[var(--accent)] transition-colors" />
-                          <input 
-                            required
-                            type="tel"
-                            value={appData.phone}
-                            onChange={e => setAppData(prev => ({ ...prev, phone: e.target.value }))}
-                            placeholder="+1 234 567 890"
-                            className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl p-4 pl-12 text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/40 focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/5 outline-none transition-all shadow-sm"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2 col-span-2 md:col-span-1">
-                        <label className="text-xs font-bold text-[var(--text-secondary)] ml-1">Availability</label>
-                        <div className="relative group" id="availability-dropdown">
-                          <button
-                            type="button"
-                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            className={`w-full bg-[var(--bg)] border rounded-2xl p-4 pl-12 text-sm font-semibold text-[var(--text-primary)] text-left transition-all shadow-sm flex items-center justify-between ${
-                              isDropdownOpen ? 'border-[var(--accent)] ring-4 ring-[var(--accent)]/5' : 'border-[var(--border)] group-hover:border-[var(--text-secondary)]/40'
-                            }`}
-                          >
-                            <div className="flex items-center gap-4">
-                              <Clock className={`w-4 h-4 transition-colors ${isDropdownOpen ? 'text-[var(--accent)]' : 'text-[var(--text-secondary)]'}`} />
-                              <span className="capitalize">{appData.availability.replace('-', ' ')} Availability</span>
-                            </div>
-                            <ChevronDown className={`w-4 h-4 text-[var(--text-secondary)] transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                          </button>
-
-                          <AnimatePresence>
-                            {isDropdownOpen && (
-                              <motion.div
-                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                className="absolute top-full left-0 right-0 mt-2 bg-[var(--surface)] border border-[var(--border)] rounded-[24px] shadow-2xl z-[100] overflow-hidden backdrop-blur-3xl"
-                              >
-                                {[
-                                  { value: 'immediate', label: 'Immediate Availability' },
-                                  { value: 'scheduled', label: 'Scheduled Availability' },
-                                  { value: 'on-call', label: 'On-Call Only' }
-                                ].map((opt) => (
-                                  <button
-                                    key={opt.value}
-                                    type="button"
-                                    onClick={() => {
-                                      setAppData(prev => ({ ...prev, availability: opt.value as any }));
-                                      setIsDropdownOpen(false);
-                                    }}
-                                    className={`w-full p-4 text-sm font-bold text-left transition-all hover:bg-[var(--accent)] hover:text-white flex items-center justify-between ${
-                                      appData.availability === opt.value ? 'bg-[var(--accent)]/5 text-[var(--accent)]' : 'text-[var(--text-secondary)]'
-                                    }`}
-                                  >
-                                    {opt.label}
-                                    {appData.availability === opt.value && <CheckCircle2 className="w-4 h-4" />}
-                                  </button>
-                                ))}
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Location & Context Section */}
-                    <div className="space-y-6">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-[var(--text-secondary)] ml-1">Deployment Radius / Area</label>
-                        <div className="relative group">
-                          <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)] group-focus-within:text-[var(--accent)] transition-colors" />
-                          <input 
-                            required
-                            type="text"
-                            value={appData.address}
-                            onChange={e => setAppData(prev => ({ ...prev, address: e.target.value }))}
-                            placeholder="Where are you located?"
-                            className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl p-4 pl-12 text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/40 focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/5 outline-none transition-all shadow-sm"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                         <label className="text-xs font-bold text-[var(--text-secondary)] ml-1">Experience Summary</label>
-                         <textarea 
-                           required
-                           value={appData.bio}
-                           onChange={e => setAppData(prev => ({ ...prev, bio: e.target.value }))}
-                           placeholder="Briefly describe your relevant background or skills..."
-                           className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-[24px] p-5 text-sm font-semibold text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/40 focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/5 outline-none transition-all resize-none h-32 shadow-sm"
-                         />
-                      </div>
-                    </div>
-
-                    {/* Verification & Risk Group */}
-                    <div className="grid md:grid-cols-2 gap-6 pt-4 border-t border-[var(--border)]">
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-[var(--text-secondary)] ml-1">Identification Number</label>
-                        <div className="relative group">
-                          <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)] group-focus-within:text-[var(--accent)] transition-colors" />
-                          <input 
-                            required
-                            type="text"
-                            value={appData.idProofText}
-                            onChange={e => setAppData(prev => ({ ...prev, idProofText: e.target.value }))}
-                            placeholder="Govt ID Number"
-                            className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl p-4 pl-12 text-sm font-semibold text-[var(--text-primary)] focus:border-[var(--accent)] outline-none transition-all shadow-sm"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-[var(--text-secondary)] ml-1">Emergency Contact</label>
-                        <div className="relative group">
-                          <UsersIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)] group-focus-within:text-[var(--accent)] transition-colors" />
-                          <input 
-                            type="text"
-                            value={appData.emergencyContact}
-                            onChange={e => setAppData(prev => ({ ...prev, emergencyContact: e.target.value }))}
-                            placeholder="Name & Relationship"
-                            className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-2xl p-4 pl-12 text-sm font-semibold text-[var(--text-primary)] focus:border-[var(--accent)] outline-none transition-all shadow-sm"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <button 
-                      type="submit"
-                      disabled={isSubmitting || !user}
-                      className="w-full group relative bg-[var(--text-primary)] text-[var(--text-inverse)] py-5 rounded-[28px] font-black text-sm uppercase tracking-widest hover:opacity-95 active:scale-[0.98] disabled:opacity-30 transition-all flex items-center justify-center gap-4 shadow-xl overflow-hidden"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                      {isSubmitting ? (
-                        <Activity className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <>
-                          <FileText className="w-5 h-5" />
-                          Submit Verification File
-                        </>
-                      )}
-                    </button>
-                  </form>
-                </div>
-              </motion.div>
+              <VolunteerApplication 
+                onCancel={() => setView('welcome')} 
+                onAuthRequired={() => {
+                  sessionStorage.setItem('post-login-redirect', 'volunteer-apply');
+                  setView('auth');
+                }}
+                isDashboard={false}
+              />
             )}
           </AnimatePresence>
 

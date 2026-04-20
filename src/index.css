@@ -16,25 +16,25 @@ html {
 
 @layer base {
   :root {
-    --bg: #f5f5f7;
+    --bg: #f8fafc;
     --surface: #ffffff;
-    --hover: #f0f0f0;
+    --hover: #f1f5f9;
     --border: rgba(0, 0, 0, 0.08);
-    --text-primary: #1d1d1f;
-    --text-secondary: #86868b;
+    --text-primary: #0f172a; /* Darker Slate for maximum legibility */
+    --text-secondary: #475569; /* Darker secondary text (Slate 600) */
     --text-inverse: #ffffff;
-    --accent: #0066cc;
+    --accent: #0284c7; /* Vibrant Blue */
   }
   
   .dark {
-    --bg: #000000;
-    --surface: #1c1c1e;
-    --hover: #2c2c2e;
-    --border: rgba(255, 255, 255, 0.12);
-    --text-primary: #f5f5f7;
-    --text-secondary: #86868b;
-    --text-inverse: #000000;
-    --accent: #0a84ff;
+    --bg: #020617; /* Deep Navy (Slate 950) */
+    --surface: #0f172a; /* Lighter Navy (Slate 900) */
+    --hover: #1e293b; /* Hover Slate (Slate 800) */
+    --border: rgba(255, 255, 255, 0.08);
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-inverse: #020617;
+    --accent: #38bdf8; /* Brighter accent for navy bg */
   }
 
   body {

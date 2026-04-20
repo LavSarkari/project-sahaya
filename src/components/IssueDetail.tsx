@@ -6,6 +6,7 @@ import { Issue } from '../types';
 import { generateRecommendation, analyzeTacticalDepth, matchVolunteerToTask } from '../services/aiService';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
+import { IssueComments } from './IssueComments';
 
 const ALL_SKILLS = ['medical', 'logistics', 'search and rescue', 'communications', 'food distribution'];
 
@@ -311,6 +312,11 @@ export const IssueDetail: React.FC<IssueDetailProps> = ({ issue }) => {
               <div className="font-mono text-xs font-semibold text-[var(--text-primary)]">{issue.coordinates.lng.toFixed(6)}</div>
             </div>
           </div>
+        </section>
+
+        {/* Tactical Log Sub-module */}
+        <section className="space-y-3 pt-2">
+            <IssueComments issueId={issue.id} />
         </section>
       </div>
 

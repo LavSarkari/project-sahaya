@@ -256,3 +256,46 @@ export const matchVolunteerToTask = async (
   }
 };
 
+
+/**
+ * Global Strategic Audit: Analyzes the full allocation picture and generates
+ * a natural-language strategic summary for coordinators.
+ */
+export const auditGlobalAllocation = async (
+  sectorSummary: string,
+  alertsSummary: string
+): Promise<string> => {
+  const cacheKey = `audit-${sectorSummary.length}-${alertsSummary.length}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const response = await genAI.models.generateContent({
+      model: model,
+      contents: `You are the Chief Coordinator for Project Sahaya. Analyze the current resource allocation situation and provide a strategic assessment.
+
+SECTOR STATUS:
+${sectorSummary}
+
+DETECTED MISALLOCATIONS:
+${alertsSummary}
+
+Provide a 3-4 sentence strategic assessment that:
+1. Identifies the most urgent reallocation needed
+2. Highlights any dangerous gaps in coverage
+3. Recommends the single most impactful action to take right now
+
+Be direct, concise, and urgent where warranted.`,
+      config: {
+        systemInstruction: "You are a humanitarian crisis coordinator. Speak in clear operational language. No pleasantries. Max 4 sentences."
+      }
+    });
+
+    const result = response.text || "Strategic assessment unavailable. Review sector data manually.";
+    setCached(cacheKey, result);
+    return result;
+  } catch (error) {
+    console.error("AI Audit Error:", error);
+    return "AI strategic assessment temporarily unavailable. Please review the sector matrix and alerts manually for allocation decisions.";
+  }
+};

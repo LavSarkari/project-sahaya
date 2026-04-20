@@ -121,7 +121,10 @@ service cloud.firestore {
              data.timestamp is string &&
              (!('assignedTo' in data) || (data.assignedTo is string)) &&
              (!('resolvedBy' in data) || (data.resolvedBy is string)) &&
-             data.keys().hasOnly(['id', 'title', 'location', 'areaId', 'peopleAffected', 'priority', 'category', 'status', 'aiRecommendation', 'confidence', 'eta', 'riskMessage', 'coordinates', 'timestamp', 'assignedTo', 'resolvedBy', 'signalCount', 'sourceDescriptions']);
+             (!('dataSource' in data) || (data.dataSource in ['field_report', 'food_drive', 'medical_camp', 'blood_donation', 'disability_program', 'ngo_partner'])) &&
+             (!('sourceOrg' in data) || (data.sourceOrg is string && data.sourceOrg.size() < 200)) &&
+             (!('description' in data) || (data.description is string && data.description.size() < 2000)) &&
+             data.keys().hasOnly(['id', 'title', 'location', 'areaId', 'peopleAffected', 'priority', 'category', 'status', 'aiRecommendation', 'confidence', 'eta', 'riskMessage', 'coordinates', 'timestamp', 'assignedTo', 'resolvedBy', 'signalCount', 'sourceDescriptions', 'dataSource', 'sourceOrg', 'description']);
     }
 
 
@@ -163,6 +166,18 @@ service cloud.firestore {
       );
       
       allow delete: if isAdmin() && isValidId(issueId);
+    }
+
+    // Settings collection for allocation configuration
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Resources collection for logistics
+    match /resources/{resourceId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
     match /{document=**} {

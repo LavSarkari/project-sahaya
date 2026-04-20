@@ -1,4 +1,4 @@
-import { collection, onSnapshot, query, orderBy, doc, writeBatch, getDocs, where, updateDoc, addDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, writeBatch, getDocs, where, updateDoc, addDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Issue } from '../types';
 import { MOCK_ISSUES } from '../constants';
@@ -24,57 +24,72 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
     path
   };
   console.error('Firestore Error Details: ', errInfo);
-  // Don't throw inside listeners to avoid uncaught exceptions, 
-  // just log and allow the UI to handle the empty state
 }
 
 import { mergeSignals } from './aiService';
 
 export const submitReport = async (report: Omit<Issue, 'id' | 'eta'> & { rawDescription?: string }) => {
   try {
-    const issuesRef = collection(db, 'issues');
-    // Find active issues in the same area to potentially aggregate
-    const q = query(
-      issuesRef, 
-      where('areaId', '==', report.areaId),
-      where('status', '!=', 'resolved')
-    );
+    return await runTransaction(db, async (transaction) => {
+      const issuesRef = collection(db, 'issues');
+      
+      // 1. Find active issues in the area
+      const q = query(
+        issuesRef, 
+        where('areaId', '==', report.areaId),
+        where('status', '!=', 'resolved')
+      );
 
-    const snapshot = await getDocs(q);
-    const existingIssues = snapshot.docs.map(d => ({ ...d.data(), id: d.id }) as Issue);
-    
-    // Use AI to decide if we should merge
-    const signalWithMeta = {
-      ...report,
-      signalCount: 1,
-      sourceDescriptions: [report.rawDescription || report.title]
-    };
+      const snapshot = await getDocs(q);
+      const existingIssues = snapshot.docs.map(d => ({ ...d.data(), id: d.id }) as Issue);
+      
+      // 2. Decide if we should merge via AI
+      const signalWithMeta = {
+        ...report,
+        signalCount: 1,
+        sourceDescriptions: [report.rawDescription || report.title]
+      };
 
-    const mergeResult = await mergeSignals(signalWithMeta, existingIssues);
+      const mergeResult = await mergeSignals(signalWithMeta, existingIssues);
 
-    if (mergeResult.shouldMerge && mergeResult.mergedIssue) {
-      const { id, ...updateData } = mergeResult.mergedIssue;
-      if (id) {
-        await updateDoc(doc(db, 'issues', id), {
-           ...updateData,
-           timestamp: new Date().toISOString()
-        });
-        return { id, type: 'aggregated' };
-      }
-    } 
+      if (mergeResult.shouldMerge && mergeResult.mergedIssue) {
+        const { id, ...updateData } = mergeResult.mergedIssue;
+        if (id) {
+          const issueRef = doc(db, 'issues', id);
+          // Re-get the doc in transaction to ensure freshness
+          const freshSnap = await transaction.get(issueRef);
+          if (freshSnap.exists()) {
+            const freshData = freshSnap.data() as Issue;
+            transaction.update(issueRef, {
+              ...updateData,
+              // Accumulate people affected and signals atomically
+              signalCount: (freshData.signalCount || 1) + 1,
+              peopleAffected: (freshData.peopleAffected || 0) + (report.peopleAffected || 0),
+              timestamp: new Date().toISOString()
+            });
+            return { id, type: 'aggregated' };
+          }
+        }
+      } 
 
-    // Else create new
-    const newIssue = {
-      ...signalWithMeta,
-      status: 'reported',
-      eta: 'Calculating...', 
-    };
-    const { rawDescription, ...cleanIssue } = newIssue as any;
-    const docRef = await addDoc(issuesRef, cleanIssue);
-    return { id: docRef.id, type: 'new' };
+      // 3. Else create new
+      const newIssueRef = doc(collection(db, 'issues'));
+      const newIssue = {
+        ...signalWithMeta,
+        status: 'reported',
+        eta: 'Calculating...', 
+      };
+      const { rawDescription, ...cleanIssue } = newIssue as any;
+      // Ensure dataSource fields are included
+      if (report.dataSource) cleanIssue.dataSource = report.dataSource;
+      if ((report as any).sourceOrg) cleanIssue.sourceOrg = (report as any).sourceOrg;
+      transaction.set(newIssueRef, cleanIssue);
+      return { id: newIssueRef.id, type: 'new' };
+    });
     
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, 'issues');
+    throw error;
   }
 };
 

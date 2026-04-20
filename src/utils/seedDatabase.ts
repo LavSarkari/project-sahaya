@@ -121,7 +121,35 @@ export async function runSeeder() {
     }
 
     console.log("✅ All 50 issues seeded!");
-    alert("✅ Successfully seeded 50 crisis events + 50 volunteers across India!");
+
+    // Seed Resources for Logistics Hub
+    const resourcesRef = collection(db, 'resources');
+    const resourceCategories = ['FOOD', 'MEDICAL', 'WATER', 'SHELTER'] as const;
+    const resourceNames = {
+      'FOOD': ['Emergency Rations', 'Meal Kits', 'Baby Food'],
+      'MEDICAL': ['Trauma Kits', 'Insulin Supplies', 'Antibiotics'],
+      'WATER': ['Bottled Water', 'Purification Tablets', 'Water Tanks'],
+      'SHELTER': ['Blankets', 'Tents', 'Sleeping Bags']
+    };
+
+    const uniqueAreas = Array.from(new Set(REALISTIC_ISSUES.map(is => is.loc.split(",").pop()!.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""))));
+
+    for (const area of uniqueAreas) {
+      for (const cat of resourceCategories) {
+        const name = pick(resourceNames[cat]);
+        const resId = `res-${area}-${cat.toLowerCase()}`;
+        await setDoc(doc(resourcesRef, resId), {
+          name,
+          category: cat,
+          areaId: area,
+          quantity: rint(50, 500),
+          threshold: rint(100, 200),
+          lastUpdated: serverTimestamp()
+        });
+      }
+    }
+    console.log("✅ Logistics resources seeded!");
+    alert("✅ Successfully seeded 50 crisis events + 50 volunteers + logistics resources!");
   } catch (err: any) {
     console.error("Seed error:", err);
     alert(`Seeding failed: ${err.message}`);

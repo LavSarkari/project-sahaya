@@ -1,6 +1,6 @@
 import React from 'react';
 import { Issue } from '../types';
-import { Users, MapPin, Filter, MoreHorizontal, Activity } from 'lucide-react';
+import { Users, MapPin, Filter, MoreHorizontal, Activity, Tag } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface IssueFeedProps {
@@ -70,6 +70,12 @@ export const IssueFeed: React.FC<IssueFeedProps> = ({ issues, selectedIssueId, o
                     <div className="flex items-center gap-1 bg-indigo-50 text-indigo-600 border border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide">
                       <Activity className="w-3 h-3" />
                       {issue.signalCount} People reported
+                    </div>
+                  )}
+                  {issue.dataSource && issue.dataSource !== 'field_report' && (
+                    <div className="flex items-center gap-1 bg-violet-50 text-violet-600 border border-violet-200 dark:bg-violet-500/10 dark:text-violet-400 dark:border-violet-500/20 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wide">
+                      <Tag className="w-2.5 h-2.5" />
+                      {issue.dataSource.replace('_', ' ')}
                     </div>
                   )}
                   <div className="text-[10px] text-[var(--text-secondary)] uppercase font-semibold">

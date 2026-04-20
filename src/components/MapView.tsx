@@ -1,12 +1,13 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Map, Marker } from 'pigeon-maps';
-import { Issue, UserProfile } from '../types';
+import { Issue, UserProfile, HeatmapPoint } from '../types';
 import { RESPONSE_TEAMS } from '../constants';
+import { generateHeatmapData } from '../services/allocationService';
 import { 
   Shield, MapPin, Users, Brain, Activity, 
   Layers, Navigation, CheckCircle2, 
   Locate, Plus, Minus, Compass, 
-  Target, AlertCircle
+  Target, AlertCircle, Flame
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
@@ -34,6 +35,8 @@ export const MapView: React.FC<MapViewProps> = ({
   const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
   const [volunteers, setVolunteers] = useState<UserProfile[]>([]);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [mapLayer, setMapLayer] = useState<'markers' | 'heatmap' | 'both'>('markers');
+  const heatmapCanvasRef = useRef<HTMLCanvasElement>(null);
 
   // Theme detection for tactical filtering
   useEffect(() => {
@@ -148,8 +151,92 @@ export const MapView: React.FC<MapViewProps> = ({
 
   const selectedIssue = useMemo(() => issues.find(i => i.id === selectedIssueId), [issues, selectedIssueId]);
 
+  // Heatmap data
+  const heatmapPoints = useMemo(() => generateHeatmapData(issues), [issues]);
+
+  // Draw heatmap on canvas
+  const drawHeatmap = useCallback(() => {
+    const canvas = heatmapCanvasRef.current;
+    if (!canvas || heatmapPoints.length === 0) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = canvas.offsetWidth * 2;
+    canvas.height = canvas.offsetHeight * 2;
+    ctx.scale(2, 2);
+    ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+
+    const w = canvas.offsetWidth;
+    const h = canvas.offsetHeight;
+
+    // Convert lat/lng to pixel positions on canvas
+    const latToY = (lat: number) => {
+      const scale = Math.pow(2, zoom) * 256;
+      const sinLat = Math.sin(lat * Math.PI / 180);
+      const worldY = (0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)) * scale;
+      const centerSinLat = Math.sin(center[0] * Math.PI / 180);
+      const centerWorldY = (0.5 - Math.log((1 + centerSinLat) / (1 - centerSinLat)) / (4 * Math.PI)) * scale;
+      return h / 2 + (worldY - centerWorldY);
+    };
+    const lngToX = (lng: number) => {
+      const scale = Math.pow(2, zoom) * 256;
+      const worldX = ((lng + 180) / 360) * scale;
+      const centerWorldX = ((center[1] + 180) / 360) * scale;
+      return w / 2 + (worldX - centerWorldX);
+    };
+
+    const radius = Math.max(30, 15 * Math.pow(2, zoom - 12));
+
+    heatmapPoints.forEach(point => {
+      const x = lngToX(point.lng);
+      const y = latToY(point.lat);
+
+      if (x < -radius || x > w + radius || y < -radius || y > h + radius) return;
+
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      const alpha = point.intensity * 0.6;
+
+      if (point.intensity > 0.7) {
+        gradient.addColorStop(0, `rgba(239, 68, 68, ${alpha})`);
+        gradient.addColorStop(0.4, `rgba(239, 68, 68, ${alpha * 0.5})`);
+        gradient.addColorStop(1, `rgba(239, 68, 68, 0)`);
+      } else if (point.intensity > 0.4) {
+        gradient.addColorStop(0, `rgba(245, 158, 11, ${alpha})`);
+        gradient.addColorStop(0.4, `rgba(245, 158, 11, ${alpha * 0.5})`);
+        gradient.addColorStop(1, `rgba(245, 158, 11, 0)`);
+      } else {
+        gradient.addColorStop(0, `rgba(16, 185, 129, ${alpha})`);
+        gradient.addColorStop(0.4, `rgba(16, 185, 129, ${alpha * 0.5})`);
+        gradient.addColorStop(1, `rgba(16, 185, 129, 0)`);
+      }
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }, [heatmapPoints, center, zoom]);
+
+  useEffect(() => {
+    if (mapLayer === 'heatmap' || mapLayer === 'both') {
+      requestAnimationFrame(drawHeatmap);
+    }
+  }, [drawHeatmap, mapLayer]);
+
+  const showMarkers = mapLayer === 'markers' || mapLayer === 'both';
+  const showHeatmap = mapLayer === 'heatmap' || mapLayer === 'both';
+
   return (
     <div ref={containerRef} className="w-full h-full relative bg-slate-950 overflow-hidden">
+      {/* Heatmap Canvas Overlay */}
+      {showHeatmap && (
+        <canvas
+          ref={heatmapCanvasRef}
+          className="absolute inset-0 w-full h-full z-10 pointer-events-none"
+          style={{ mixBlendMode: 'screen' }}
+        />
+      )}
+
       {/* Tactical Filters Applied to Map Interface */}
       <div className={`w-full h-full transition-all duration-700 ${isDarkMode ? 'tactical-map-dark' : 'tactical-map-light'}`}>
         <Map 
@@ -160,6 +247,7 @@ export const MapView: React.FC<MapViewProps> = ({
           boxClassname="pigeon-filters-none"
         >
           {/* Mission Paths - Tactical SVGs connecting teams to crises */}
+          {/* Only show markers+paths when markers layer is active */}
           {missionPaths.map(path => path && (
             // @ts-ignore
             <Marker key={path.id} anchor={[path.from.lat, path.from.lng]}>
@@ -179,7 +267,7 @@ export const MapView: React.FC<MapViewProps> = ({
           ))}
 
           {/* Issue Clusters & Markers */}
-          {clusterData.map(item => {
+          {showMarkers && clusterData.map(item => {
             if (item.type === 'cluster') {
               const isHighPriority = item.avgPriority === 'HIGH';
               // @ts-ignore
@@ -353,6 +441,23 @@ export const MapView: React.FC<MapViewProps> = ({
 
       {/* Bottom Right: Floating HUD Controls */}
       <div className="absolute bottom-6 right-6 z-40 flex flex-col gap-3">
+        {/* Layer Toggle */}
+        <div className="flex flex-col bg-slate-950/80 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+          {(['markers', 'heatmap', 'both'] as const).map((layer) => (
+            <button
+              key={layer}
+              onClick={() => setMapLayer(layer)}
+              className={`px-3 py-2 text-[8px] font-black uppercase tracking-widest transition-all border-b border-white/5 last:border-b-0 ${
+                mapLayer === layer
+                  ? 'bg-[var(--accent)]/20 text-[var(--accent)]'
+                  : 'text-slate-500 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              {layer === 'heatmap' ? '🔥' : layer === 'markers' ? '📍' : '◉'} {layer}
+            </button>
+          ))}
+        </div>
+
         <div className="flex flex-col bg-slate-950/80 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
           <button 
             onClick={() => onBoundsChanged(center, zoom + 1)}
@@ -369,7 +474,7 @@ export const MapView: React.FC<MapViewProps> = ({
         </div>
 
         <button 
-          onClick={() => onBoundsChanged([22.5, 78.5], 5)} // Nationwide India center
+          onClick={() => onBoundsChanged([22.5, 78.5], 5)}
           className="w-10 h-10 bg-[var(--accent)] text-white rounded-2xl flex items-center justify-center shadow-lg hover:bg-blue-600 transition-all active:scale-95 group"
         >
           <Locate className="w-4 h-4 group-hover:animate-pulse" />
@@ -383,7 +488,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
       {/* Bottom Left: Tactical Legend & Indicators */}
       <div className="absolute bottom-6 left-6 z-40 flex flex-col gap-2 pointer-events-none">
-        <div className="glass p-3 rounded-2xl max-w-[140px]">
+        <div className="glass p-3 rounded-2xl max-w-[160px]">
           <div className="flex items-center gap-2 mb-2">
             <Layers className="w-3.5 h-3.5 text-indigo-500" />
             <span className="text-[9px] font-black text-[var(--text-primary)] uppercase tracking-wider">Map Legend</span>
@@ -402,6 +507,22 @@ export const MapView: React.FC<MapViewProps> = ({
                 <div className="w-4 h-px bg-amber-500/50 border-t border-dashed" />
                 <span className="text-[8px] font-bold text-amber-500 uppercase tracking-tight">Mission Path</span>
               </div>
+            )}
+            {showHeatmap && (
+              <>
+                <div className="w-full h-px bg-white/10 my-1" />
+                <div className="flex items-center gap-2">
+                  <Flame className="w-3 h-3 text-rose-500" />
+                  <span className="text-[8px] font-bold text-[var(--text-secondary)] uppercase">Need Density</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="flex-1 h-1.5 rounded-full bg-gradient-to-r from-emerald-500 via-amber-500 to-rose-500" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[7px] text-[var(--text-secondary)]">Low</span>
+                  <span className="text-[7px] text-[var(--text-secondary)]">Critical</span>
+                </div>
+              </>
             )}
           </div>
         </div>
