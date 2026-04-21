@@ -68,7 +68,7 @@ service cloud.firestore {
 
     // Domain Validators
     function isValidUser(data) {
-      return hasOnlyAllowedFields(['uid', 'email', 'role', 'name', 'skills', 'bio', 'applicationStatus', 'status', 'activeTaskId', 'coordinates', 'phone', 'address', 'availability', 'emergencyContact']) &&
+      return hasOnlyAllowedFields(['uid', 'email', 'role', 'name', 'skills', 'bio', 'applicationStatus', 'status', 'activeTaskId', 'coordinates', 'phone', 'address', 'availability', 'emergencyContact', 'notificationPreferences', 'telegramChatId']) &&
              data.uid is string &&
              isValidEmail(data.email) &&
              data.role in ['admin', 'volunteer', 'reporter'] &&
@@ -82,7 +82,9 @@ service cloud.firestore {
              (!('phone' in data) || (data.phone is string && data.phone.size() < 20)) &&
              (!('address' in data) || (data.address is string && data.address.size() < 200)) &&
              (!('availability' in data) || (data.availability in ['immediate', 'scheduled', 'on-call'])) &&
-             (!('emergencyContact' in data) || (data.emergencyContact is string && data.emergencyContact.size() < 50));
+             (!('emergencyContact' in data) || (data.emergencyContact is string && data.emergencyContact.size() < 50)) &&
+             (!('telegramChatId' in data) || (data.telegramChatId is string && data.telegramChatId.size() < 100)) &&
+             (!('notificationPreferences' in data) || (data.notificationPreferences is map));
     }
 
     function isValidApplication(data) {
@@ -178,6 +180,13 @@ service cloud.firestore {
     match /resources/{resourceId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
+    }
+
+    // Notifications log
+    match /notifications_log/{logId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.volunteerId == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
     }
 
     match /{document=**} {

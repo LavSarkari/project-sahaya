@@ -19,7 +19,7 @@
 **Sahaya** bridges the gap between people in need and available volunteers through<br/>
 high-speed, compassionate, AI-driven coordination.
 
-*The core problem isn't scarcity — it's misallocation. Resources exist, but they're poorly distributed<br/>
+*The core problem isn't scarcity - it's misallocation. Resources exist, but they're poorly distributed<br/>
 due to fragmented data across NGOs, social groups, and field operations.*
 
 <br/>
@@ -52,7 +52,7 @@ due to fragmented data across NGOs, social groups, and field operations.*
 ### Strategic Allocation Dashboard
 <img src="docs/screenshots/allocation.png" alt="Allocation" width="900" />
 
-<sub>AI-driven resource allocation engine — sector health matrix, misallocation alerts, and one-click redeployment</sub>
+<sub>AI-driven resource allocation engine - sector health matrix, misallocation alerts, and one-click redeployment</sub>
 
 <br/><br/>
 
@@ -73,11 +73,11 @@ due to fragmented data across NGOs, social groups, and field operations.*
 
 > **NGOs and social groups operate in silos.** Data from food drives, blood donation campaigns, disability programs, and field reports all exist separately. There is no unified system to aggregate this information.
 
-Sahaya doesn't try to create resources from thin air. It solves the **misallocation problem** — the fact that resources exist but are invisible to the people who need them most. By aggregating fragmented data sources into a single operational picture, coordinators gain the visibility to make intelligent redeployment decisions.
+Sahaya doesn't try to create resources from thin air. It solves the **misallocation problem** - the fact that resources exist but are invisible to the people who need them most. By aggregating fragmented data sources into a single operational picture, coordinators gain the visibility to make intelligent redeployment decisions.
 
 ### Platform Model
 
-Sahaya is a **unified coordination platform** — not a tool for one individual NGO. Think of it as the **central command layer** that sits above multiple organizations:
+Sahaya is a **unified coordination platform** - not a tool for one individual NGO. Think of it as the **central command layer** that sits above multiple organizations:
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -128,42 +128,42 @@ NGO Partner Data ─────┘
 
 ### 🎯 Smart Resource Allocation Engine
 The beating heart of Sahaya. A pure-computation allocation service that:
-- **Computes sector-level health** — Groups issues by region, calculates per-category demand, urgency scores, and health status (`critical` / `strained` / `balanced` / `surplus`)
+- **Computes sector-level health** - Groups issues by region, calculates per-category demand, urgency scores, and health status (`critical` / `strained` / `balanced` / `surplus`)
 - **Detects 3 types of misallocation:**
-  - `CRITICAL_GAP` — Unassigned high-priority issues with no nearby volunteers
-  - `SKILL_MISMATCH` — Volunteers deployed outside their specialization
-  - `SURPLUS` — Over-allocated sectors that could redistribute resources
-- **N:M optimal matching** — Weighted greedy algorithm using Haversine distance, skill compatibility, and issue urgency
-- **One-click redeployment** — Admins can approve and execute suggested reallocations instantly
+  - `CRITICAL_GAP` - Unassigned high-priority issues with no nearby volunteers
+  - `SKILL_MISMATCH` - Volunteers deployed outside their specialization
+  - `SURPLUS` - Over-allocated sectors that could redistribute resources
+- **N:M optimal matching** - Weighted greedy algorithm using Haversine distance, skill compatibility, and issue urgency
+- **One-click redeployment** - Admins can approve and execute suggested reallocations instantly
 
 ### 🤖 Gemini AI Intelligence
-- **Signal Analysis** — Incoming reports are analyzed by Gemini to extract structured crisis data (category, priority, risk assessment, confidence score)
-- **Duplicate Detection** — AI-powered signal merging prevents redundant reports from the same crisis
-- **Global Audit** — Strategic natural-language assessment of the entire allocation landscape
-- **Smart Matching** — Context-aware volunteer-to-task matching based on skills, availability, and proximity
+- **Signal Analysis** - Incoming reports are analyzed by Gemini to extract structured crisis data (category, priority, risk assessment, confidence score)
+- **Duplicate Detection** - AI-powered signal merging prevents redundant reports from the same crisis
+- **Global Audit** - Strategic natural-language assessment of the entire allocation landscape
+- **Smart Matching** - Context-aware volunteer-to-task matching based on skills, availability, and proximity
 
-### 🗺️ Tactical Map & Heatmap
+### �-�️ Tactical Map & Heatmap
 - **Interactive map** with real-time issue markers, spatial clustering, and volunteer tracking
 - **Canvas-based heatmap** layer rendering demand density with radial gradients
-- **3-mode toggle** — Switch between Markers, Heatmap, or Both views
-- **Mission paths** — Visual connections between en-route volunteers and their assigned crises
-- **Fly-to animations** — Smooth animated transitions when selecting regions or issues
+- **3-mode toggle** - Switch between Markers, Heatmap, or Both views
+- **Mission paths** - Visual connections between en-route volunteers and their assigned crises
+- **Fly-to animations** - Smooth animated transitions when selecting regions or issues
 
 ### 👥 Personnel Command
-- **Volunteer vetting** — Multi-step application process with skill assessment and background fields
-- **Real-time status tracking** — See volunteer positions, active tasks, and deployment status
-- **Admin control center** — Approve applications, assign tasks, manage the entire volunteer force
-- **Role-based access** — Admins, volunteers, and reporters each see only what they need
+- **Volunteer vetting** - Multi-step application process with skill assessment and background fields
+- **Real-time status tracking** - See volunteer positions, active tasks, and deployment status
+- **Admin control center** - Approve applications, assign tasks, manage the entire volunteer force
+- **Role-based access** - Admins, volunteers, and reporters each see only what they need
 
 ### 📊 Multi-Source Data Aggregation
-- **6 data source types** — Field Report, Food Drive, Medical Camp, Blood Donation, Disability Program, NGO Partner
+- **6 data source types** - Field Report, Food Drive, Medical Camp, Blood Donation, Disability Program, NGO Partner
 - **Source tagging** on every report with visual badges in the issue feed
 - **Organization tracking** for NGO partner submissions
-- **AI signal fusion** — Multiple reports about the same crisis are automatically merged with accumulated impact data
+- **AI signal fusion** - Multiple reports about the same crisis are automatically merged with accumulated impact data
 
 ### ⚙️ Autopilot Mode
-- **Manual Approval** (default) — All AI-suggested redeployments require admin sign-off
-- **Autopilot** — High-confidence suggestions (>85%) execute automatically; high-risk actions still require approval
+- **Manual Approval** (default) - All AI-suggested redeployments require admin sign-off
+- **Autopilot** - High-confidence suggestions (>85%) execute automatically; high-risk actions still require approval
 - Configurable in Settings → Allocation Mode (admin only)
 
 ### 📦 Logistics Hub
@@ -176,7 +176,7 @@ The beating heart of Sahaya. A pure-computation allocation service that:
 
 <br/>
 
-## 🏗️ Architecture
+## �-️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -185,7 +185,7 @@ The beating heart of Sahaya. A pure-computation allocation service that:
 │                                                                  │
 │  ┌──────────┐  ┌──────────────┐  ┌──────────────────────────┐  │
 │  │ Firebase  │  │ Gemini AI    │  │ Allocation Engine        │  │
-│  │ Firestore │◀▶│ Signal Intel │◀▶│ Sector Matrix            │  │
+│  │ Firestore │�-�▶│ Signal Intel │�-�▶│ Sector Matrix            │  │
 │  │ Auth      │  │ Global Audit │  │ Misallocation Detection  │  │
 │  │ Real-time │  │ Smart Match  │  │ N:M Optimal Assignment   │  │
 │  └──────────┘  └──────────────┘  │ Heatmap Generation       │  │
@@ -282,7 +282,7 @@ Create a `.env.local` file in the root:
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-Firebase config is in `src/firebase.ts` — update with your project credentials.
+Firebase config is in `src/firebase.ts` - update with your project credentials.
 
 ### Run Locally
 
@@ -316,12 +316,12 @@ firebase deploy --only firestore:rules
 Sahaya implements **3-layer defense-in-depth** access control:
 
 ### Layer 1: Firebase Auth + Role Assignment
-- New signups default to `reporter` role — **no one gets admin access by registering**
+- New signups default to `reporter` role - **no one gets admin access by registering**
 - Admin role is restricted to a **hardcoded whitelist** of authorized emails
 - Auth via Email/Password or Google OAuth
 
 ### Layer 2: Route Guards (Client)
-- `RequireRole` component wraps protected routes — unauthorized users see an "Access Restricted" screen
+- `RequireRole` component wraps protected routes - unauthorized users see an "Access Restricted" screen
 - Non-admins are redirected away from admin URLs even if typed manually
 - Sidebar nav items only render for authorized roles
 

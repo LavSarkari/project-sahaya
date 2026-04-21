@@ -31,25 +31,26 @@ export interface StructuredSignal {
   confidence: number;
   aiRecommendation: string;
   riskMessage: string;
+  isSpamOrFake: boolean;
+  rejectionReason: string;
 }
 
 /**
- * Parses raw human input into a structured emergency signal.
+ * Parses raw human input into a structured emergency signal while filtering spam.
  */
 export const analyzeSignal = async (description: string): Promise<StructuredSignal> => {
   const result = await genAI.models.generateContent({
     model: model,
-    contents: `Analyze the following request for help and convert it into a structured report for our volunteer team.
+    contents: `Analyze the following request for help and convert it into a structured report for our volunteer team. If the report is a joke, fake, troll, or entirely unrelated to crisis/emergency relief (e.g., "send me pizza", "zombies attacking"), flag it as spam.
     
     Description: "${description}"`,
     config: {
-      systemInstruction: `You are a helpful humanitarian assistance AI. Your job is to parse raw human input (often in Hindi or mixed languages) into structured relief coordination data.
+      systemInstruction: `You are a helpful and strict humanitarian assistance AI. Your job is to parse raw human input into structured relief coordination data.
+      You MUST identify and reject fake, joke, or spam reports.
       Categories: FOOD, MEDICAL, WATER, SHELTER, SECURITY.
       Priorities: HIGH, MED, LOW.
       Confidence: A decimal between 0 and 1.
-      Recommendation: A short, compassionate, and actionable step for volunteers.
-      Risk: A clear warning of what happens if ignored.
-      Keep it brief and empathetic.`,
+      Spam Check: isSpamOrFake (boolean), and rejectionReason (brief reason if spam/fake).`,
       responseMimeType: "application/json",
       responseSchema: {
         type: Type.OBJECT,
@@ -59,9 +60,11 @@ export const analyzeSignal = async (description: string): Promise<StructuredSign
           priority: { type: Type.STRING, enum: ["HIGH", "MED", "LOW"] },
           confidence: { type: Type.NUMBER },
           aiRecommendation: { type: Type.STRING },
-          riskMessage: { type: Type.STRING }
+          riskMessage: { type: Type.STRING },
+          isSpamOrFake: { type: Type.BOOLEAN },
+          rejectionReason: { type: Type.STRING }
         },
-        required: ["title", "category", "priority", "confidence", "aiRecommendation", "riskMessage"]
+        required: ["title", "category", "priority", "confidence", "aiRecommendation", "riskMessage", "isSpamOrFake", "rejectionReason"]
       }
     }
   });
@@ -69,6 +72,37 @@ export const analyzeSignal = async (description: string): Promise<StructuredSign
   const text = result.text;
   if (!text) throw new Error("No response from AI layer.");
   return JSON.parse(text) as StructuredSignal;
+};
+
+export const verifyFaceImage = async (base64Data: string, mimeType: string): Promise<{ isHumanFace: boolean; notes: string }> => {
+  const result = await genAI.models.generateContent({
+    model: model,
+    contents: [
+      {
+        inlineData: {
+          data: base64Data,
+          mimeType: mimeType
+        }
+      },
+      "Analyze this image. Does it clearly contain a real human face? Assume this is being uploaded as a profile picture for a volunteer application."
+    ],
+    config: {
+      systemInstruction: "You are a verification AI. Check if the provided image is a real human face. Return JSON with isHumanFace (boolean) and notes (string explaining why).",
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          isHumanFace: { type: Type.BOOLEAN },
+          notes: { type: Type.STRING }
+        },
+        required: ["isHumanFace", "notes"]
+      }
+    }
+  });
+
+  const text = result.text;
+  if (!text) throw new Error("No response from AI layer.");
+  return JSON.parse(text);
 };
 
 /**

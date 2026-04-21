@@ -16,7 +16,7 @@ interface AuthContextType {
   loginWithEmail: (email: string, password: string) => Promise<void>;
   registerWithEmail: (email: string, password: string, name: string, role?: UserRole) => Promise<void>;
   logout: () => Promise<void>;
-  updateUserProfile: (data: { displayName?: string }) => Promise<void>;
+  updateUserProfile: (data: Partial<UserProfile> & { displayName?: string }) => Promise<void>;
   updateUserPassword: (newPassword: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -57,10 +57,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
       if (user) {
+        setUser(user);
         await fetchProfile(user.uid, user.email);
       } else {
+        setUser(null);
         setProfile(null);
       }
       setLoading(false);
@@ -139,16 +140,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  /** Update display name */
-  const updateUserProfile = async (data: { displayName?: string }) => {
+  /** Update profile data */
+  const updateUserProfile = async (data: Partial<UserProfile> & { displayName?: string }) => {
     if (!auth.currentUser) throw new Error('Not authenticated');
     try {
+      const updates: any = {};
+      let nameUpdatedStr = undefined;
+
       if (data.displayName) {
         await updateProfile(auth.currentUser, { displayName: data.displayName });
-        // Also update in Firestore
+        updates.name = data.displayName;
+        nameUpdatedStr = data.displayName;
+      }
+      
+      // Map other profile settings
+      if (data.notificationPreferences) updates.notificationPreferences = data.notificationPreferences;
+      if (data.telegramChatId !== undefined) updates.telegramChatId = data.telegramChatId;
+      if (data.phone !== undefined) updates.phone = data.phone;
+
+      if (Object.keys(updates).length > 0) {
         const docRef = doc(db, 'users', auth.currentUser.uid);
-        await updateDoc(docRef, { name: data.displayName });
-        setProfile(prev => prev ? { ...prev, name: data.displayName! } : null);
+        await updateDoc(docRef, updates);
+        setProfile(prev => prev ? { ...prev, ...updates, name: nameUpdatedStr || prev.name } : null);
       }
     } catch (error) {
       console.error('Profile Update Error:', error);

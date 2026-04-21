@@ -9,6 +9,14 @@ import { isAdminEmail } from '../lib/utils';
 export const Settings: React.FC = () => {
   const { user, profile, logout, updateUserProfile, updateUserPassword } = useAuth();
   const [displayName, setDisplayName] = useState(profile?.name || user?.displayName || '');
+  const [phoneNumber, setPhoneNumber] = useState(profile?.phone || '');
+  const [telegramChatId, setTelegramChatId] = useState(profile?.telegramChatId || '');
+  const [notifyPrefs, setNotifyPrefs] = useState({
+    email: profile?.notificationPreferences?.email ?? true,
+    sms: profile?.notificationPreferences?.sms ?? false,
+    telegram: profile?.notificationPreferences?.telegram ?? false,
+  });
+
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [saving, setSaving] = useState(false);
@@ -50,14 +58,73 @@ export const Settings: React.FC = () => {
     setLoadingAutopilot(false);
   };
 
+  const [testingPing, setTestingPing] = useState(false);
+
+  const handleTestPing = async () => {
+    if (!telegramChatId.trim()) {
+      setErrorMsg('Please enter a Telegram Chat ID first.');
+      return;
+    }
+    
+    setTestingPing(true);
+    setSuccessMsg('');
+    setErrorMsg('');
+    
+    const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
+    if (!botToken) {
+      setErrorMsg('VITE_TELEGRAM_BOT_TOKEN is missing from .env.local');
+      setTestingPing(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: telegramChatId.trim(),
+          text: '✅ Ping! Your Telegram integration with Project Sahaya is working perfectly.',
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "📱 Open Dashboard",
+                  web_app: {
+                    url: "https://projectsahaya.web.app/"
+                  }
+                }
+              ]
+            ]
+          }
+        })
+      });
+      
+      if (res.ok) {
+        setSuccessMsg('Test ping sent successfully! Check your Telegram.');
+      } else {
+        const errorText = await res.text();
+        setErrorMsg(`Telegram Error: ${errorText}`);
+      }
+    } catch (err) {
+      setErrorMsg('Failed to send test ping.');
+      console.error(err);
+    }
+    setTestingPing(false);
+  };
+
   const handleSaveProfile = async () => {
     if (!displayName.trim()) return;
     setSaving(true);
     setSuccessMsg('');
     setErrorMsg('');
     try {
-      await updateUserProfile({ displayName: displayName.trim() });
-      setSuccessMsg('Profile updated successfully');
+      await updateUserProfile({ 
+        displayName: displayName.trim(),
+        phone: phoneNumber.trim(),
+        telegramChatId: telegramChatId.trim(),
+        notificationPreferences: notifyPrefs
+      });
+      setSuccessMsg('Profile and preferences updated successfully');
     } catch (err: any) {
       setErrorMsg(err?.message || 'Failed to update profile');
     }
@@ -202,6 +269,114 @@ export const Settings: React.FC = () => {
               </span>
             </div>
           </div>
+        </motion.div>
+
+        {/* Notification Preferences */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl p-6 lg:p-8 space-y-6"
+        >
+          <div className="flex items-center gap-3">
+            <Activity className="w-5 h-5 text-[var(--accent)]" />
+            <h3 className="text-lg font-bold text-[var(--text-primary)]">Notification Preferences</h3>
+          </div>
+          <p className="text-xs font-medium text-[var(--text-secondary)] -mt-2">
+            Configure how you want to be alerted when assigned to a new mission.
+          </p>
+
+          <div className="space-y-6">
+            {/* Toggles */}
+            <div className="flex flex-col gap-4">
+              {/* Email Toggle */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-zinc-400" />
+                  <span className="text-sm font-bold text-[var(--text-primary)]">Email Notifications</span>
+                </div>
+                <button 
+                  onClick={() => setNotifyPrefs(p => ({ ...p, email: !p.email }))}
+                  className="focus:outline-none"
+                >
+                  {notifyPrefs.email ? <ToggleRight className="w-8 h-8 text-[var(--accent)]" /> : <ToggleLeft className="w-8 h-8 text-[var(--text-secondary)]/50" />}
+                </button>
+              </div>
+
+              {/* SMS Toggle */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Activity className="w-4 h-4 text-emerald-400" />
+                  <span className="text-sm font-bold text-[var(--text-primary)]">SMS Notifications</span>
+                </div>
+                <button 
+                  onClick={() => setNotifyPrefs(p => ({ ...p, sms: !p.sms }))}
+                  className="focus:outline-none"
+                >
+                  {notifyPrefs.sms ? <ToggleRight className="w-8 h-8 text-[var(--accent)]" /> : <ToggleLeft className="w-8 h-8 text-[var(--text-secondary)]/50" />}
+                </button>
+              </div>
+
+              {/* Telegram Toggle */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Zap className="w-4 h-4 text-blue-400" />
+                  <span className="text-sm font-bold text-[var(--text-primary)]">Telegram Notifications</span>
+                </div>
+                <button 
+                  onClick={() => setNotifyPrefs(p => ({ ...p, telegram: !p.telegram }))}
+                  className="focus:outline-none"
+                >
+                  {notifyPrefs.telegram ? <ToggleRight className="w-8 h-8 text-[var(--accent)]" /> : <ToggleLeft className="w-8 h-8 text-[var(--text-secondary)]/50" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Config Fields */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block">Phone Number</label>
+                <input
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={e => setPhoneNumber(e.target.value)}
+                  placeholder="+1 234 567 8900"
+                  className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-xl p-3.5 text-sm font-medium text-[var(--text-primary)] focus:border-[var(--accent)] outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider block">Telegram Chat ID</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={telegramChatId}
+                    onChange={e => setTelegramChatId(e.target.value)}
+                    placeholder="e.g. 123456789"
+                    className="w-full bg-[var(--bg)] border border-[var(--border)] rounded-xl p-3.5 pl-10 pr-24 text-sm font-medium text-[var(--text-primary)] focus:border-[var(--accent)] outline-none transition-all"
+                  />
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]">#</span>
+                  <button
+                    onClick={handleTestPing}
+                    disabled={testingPing || !telegramChatId.trim()}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-[var(--accent)] text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider disabled:opacity-50 hover:bg-blue-600 transition-colors"
+                  >
+                    {testingPing ? 'Ping...' : 'Test Ping'}
+                  </button>
+                </div>
+                <p className="text-[9px] text-[var(--text-secondary)]">
+                  Message <strong>@userinfobot</strong> on Telegram to get your 9-digit Chat ID.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <button
+            onClick={handleSaveProfile}
+            disabled={saving}
+            className="w-full mt-4 py-3 bg-[var(--text-primary)] text-[var(--text-inverse)] rounded-xl text-xs font-bold uppercase tracking-wider disabled:opacity-30 hover:opacity-90 transition-all flex items-center justify-center gap-2"
+          >
+            {saving ? <Activity className="w-4 h-4 animate-spin" /> : 'Save Preferences'}
+          </button>
         </motion.div>
 
         {/* Change Password (Only for email/password users) */}

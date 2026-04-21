@@ -1,9 +1,9 @@
 /**
- * Allocation Engine — The Brain of Smart Resource Allocation
+ * Allocation Engine - The Brain of Smart Resource Allocation
  * 
  * This module performs pure computation over issues and volunteers
  * to detect misallocations, compute optimal assignments, and
- * generate heatmap data. No Firebase calls — just algorithms.
+ * generate heatmap data. No Firebase calls - just algorithms.
  */
 
 import { 
@@ -189,7 +189,7 @@ export function detectMisallocations(
       const supply = sector.supplies[neededSkill] || 0;
 
       if (demand.count > 0 && supply === 0) {
-        // CRITICAL GAP — demand exists, no matching supply
+        // CRITICAL GAP - demand exists, no matching supply
         // Look for surplus volunteers in other sectors
         const surplusSector = sectorMatrix.find(other => 
           other.sectorId !== sector.sectorId && 
@@ -224,7 +224,7 @@ export function detectMisallocations(
           timestamp: new Date().toISOString()
         });
       } else if (demand.count === 0 && supply > 1) {
-        // SURPLUS — volunteers idle with no matching demand
+        // SURPLUS - volunteers idle with no matching demand
         alerts.push({
           id: `alert-${alertId++}`,
           type: 'SURPLUS',
@@ -240,7 +240,7 @@ export function detectMisallocations(
       }
     });
 
-    // SKILL MISMATCH — sector has volunteers but wrong skills
+    // SKILL MISMATCH - sector has volunteers but wrong skills
     const totalDemandInSector = ALL_CATEGORIES.reduce((s, c) => s + sector.demands[c].count, 0);
     if (totalDemandInSector > 0 && sector.volunteerIds.length > 0) {
       const unmetCategories = ALL_CATEGORIES.filter(cat => {
@@ -318,7 +318,7 @@ export function computeOptimalAssignments(
   // Sort by score descending
   pairs.sort((a, b) => b.score - a.score);
 
-  // Greedy assignment — no volunteer assigned twice, no issue assigned twice
+  // Greedy assignment - no volunteer assigned twice, no issue assigned twice
   const assignedVolunteers = new Set<string>();
   const assignedIssues = new Set<string>();
   const results: OptimalAssignment[] = [];

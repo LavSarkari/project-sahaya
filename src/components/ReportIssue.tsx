@@ -91,6 +91,13 @@ export const ReportIssue: React.FC = () => {
     setIsSubmitting(true);
     try {
       const analysis = await analyzeSignal(description);
+      
+      if (analysis.isSpamOrFake) {
+        setError(`Signal Rejected: ${analysis.rejectionReason}`);
+        setIsSubmitting(false);
+        return;
+      }
+
       setAiAnalysis(analysis);
       setStep('review');
     } catch (err) {

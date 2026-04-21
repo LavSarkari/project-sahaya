@@ -7,6 +7,7 @@ import { generateRecommendation, analyzeTacticalDepth, matchVolunteerToTask } fr
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { IssueComments } from './IssueComments';
+import { NotificationService } from '../services/notificationService';
 
 const ALL_SKILLS = ['medical', 'logistics', 'search and rescue', 'communications', 'food distribution'];
 
@@ -120,6 +121,9 @@ export const IssueDetail: React.FC<IssueDetailProps> = ({ issue }) => {
         status: 'en-route',
         activeTaskId: issue.id
       });
+      
+      // Dispatch notification
+      NotificationService.notifyAssignment(volunteerId, issue.id);
       
       // Optionally show success
     } catch (err) {

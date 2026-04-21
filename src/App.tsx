@@ -24,7 +24,7 @@ import { LogisticsHub } from './components/LogisticsHub';
 import { StrategicAllocation } from './components/StrategicAllocation';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 
-// Route guard component — renders children only if the user has the required role
+// Route guard component - renders children only if the user has the required role
 const RequireRole: React.FC<{
   allowed: string[];
   children: React.ReactNode;
@@ -80,27 +80,10 @@ export default function App() {
     root.classList.add(theme);
   }, [theme]);
 
-  // Sync active view with role on initial login + RBAC enforcement
-  React.useEffect(() => {
-    if (user && profile) {
-      const isAdmin = profile?.role === 'admin' || isAdminEmail(user?.email);
-      
-      // If we are at root but the user has a specific role, or we need to enforce RBAC
-      if (location.pathname === '/' || location.pathname === '/overview') {
-        if (!isAdmin) {
-          if (profile?.role === 'volunteer') navigate('/tasks');
-          else if (profile?.role === 'reporter') navigate('/reporter');
-        }
-      }
-      
-      // Block non-admins from admin-only routes via URL bar
-      const adminOnlyPaths = ['/team', '/reports', '/logistics', '/allocation'];
-      if (adminOnlyPaths.includes(location.pathname) && !isAdmin) {
-        if (profile?.role === 'volunteer') navigate('/tasks');
-        else navigate('/reporter');
-      }
-    }
-  }, [profile, user, location.pathname]);
+  // Determine user role and permissions
+  const isAdmin = useMemo(() => {
+    return profile?.role === 'admin' || isAdminEmail(user?.email);
+  }, [profile, user]);
 
   // Handle post-login redirects
   React.useEffect(() => {
@@ -289,6 +272,9 @@ export default function App() {
         <main className="flex-1 overflow-hidden relative flex flex-col">
           <Routes>
             <Route path="/" element={
+              !isAdmin ? (
+                profile?.role === 'volunteer' ? <Navigate to="/tasks" replace /> : <Navigate to="/reporter" replace />
+              ) : (
               <div className="flex-1 flex flex-col overflow-hidden w-full relative">
                 <div className="flex-1 flex flex-col lg:flex-row overflow-hidden w-full">
                   <div className="h-[320px] lg:h-full lg:flex-1 relative border-b lg:border-b-0 lg:border-l border-[var(--border)] bg-brand-bg overflow-hidden order-first lg:order-last">
@@ -357,6 +343,7 @@ export default function App() {
                   </div>
                 </div>
               </div>
+              )
             } />
             <Route path="/reporter" element={<ReportIssue />} />
             <Route path="/volunteer-apply" element={<VolunteerApplication onCancel={() => navigate('/reporter')} isDashboard={true} />} />

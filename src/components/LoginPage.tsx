@@ -84,7 +84,7 @@ export const LoginPage: React.FC = () => {
   if (profile?.applicationStatus === 'pending' || applied) {
     return (
       <div className="fixed inset-0 bg-[var(--bg)] flex items-center justify-center p-6 text-[var(--text-primary)]">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-md w-full bg-[var(--surface)] border border-[var(--border)] rounded-[40px] p-12 text-center space-y-8 shadow-sm"
@@ -97,7 +97,7 @@ export const LoginPage: React.FC = () => {
             <h2 className="text-3xl font-bold tracking-tight">Application Under Review</h2>
             <p className="text-[var(--text-secondary)] text-sm leading-relaxed font-medium">Thank you for stepping up to help. Our team is currently reviewing your application and will get back to you shortly.</p>
           </div>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="w-full bg-[var(--border)] hover:bg-[var(--hover)] text-[var(--text-primary)] py-4 rounded-2xl font-semibold transition-all text-sm"
           >
@@ -113,49 +113,49 @@ export const LoginPage: React.FC = () => {
       {/* Visual Left Side (Desktop Only) */}
       <div className="hidden lg:flex flex-1 relative bg-[var(--surface)] overflow-hidden items-center justify-center">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(2,132,199,0.05)_0%,transparent_50%)]" />
-        
+
         <div className="relative z-10 p-20 max-w-xl text-center">
-           <motion.div
-             initial={{ opacity: 0, y: 20 }}
-             animate={{ opacity: 1, y: 0 }}
-             transition={{ duration: 0.8 }}
-             className="flex flex-col items-center"
-           >
-              <div className="w-28 h-28 bg-[var(--surface)]/60 backdrop-blur-2xl rounded-[2.5rem] flex items-center justify-center mb-8 shadow-2xl overflow-hidden border border-[var(--border)] relative group">
-                <div className="absolute inset-0 bg-[var(--accent)]/10 blur-[40px] rounded-full scale-0 group-hover:scale-100 transition-transform duration-1000" />
-                <img src="/logo.png" alt="Sahaya Logo" className="w-full h-full object-contain relative z-10 p-4" />
-              </div>
-              <h1 className="text-5xl font-extrabold tracking-tight mb-6">
-                Welcome to Sahaya
-              </h1>
-              <p className="text-lg text-[var(--text-secondary)] font-medium leading-relaxed max-w-md">
-                A community-driven platform to request help and coordinate humanitarian response seamlessly.
-              </p>
-           </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="flex flex-col items-center"
+          >
+            <div className="w-28 h-28 bg-[var(--surface)]/60 backdrop-blur-2xl rounded-[2.5rem] flex items-center justify-center mb-8 shadow-2xl overflow-hidden border border-[var(--border)] relative group">
+              <div className="absolute inset-0 bg-[var(--accent)]/10 blur-[40px] rounded-full scale-0 group-hover:scale-100 transition-transform duration-1000" />
+              <img src="/logo.png" alt="Sahaya Logo" className="w-full h-full object-contain relative z-10 p-4" />
+            </div>
+            <h1 className="text-5xl font-extrabold tracking-tight mb-6">
+              Welcome to Sahaya
+            </h1>
+            <p className="text-lg text-[var(--text-secondary)] font-medium leading-relaxed max-w-md">
+              A community-driven platform to request help and coordinate humanitarian response seamlessly.
+            </p>
+          </motion.div>
         </div>
-        
+
         <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-6 text-[var(--text-secondary)]">
-           <span className="text-xs font-semibold px-4 py-1.5 bg-[var(--bg)] rounded-full border border-[var(--border)] shadow-sm">Community First</span>
-           <span className="text-xs font-semibold px-4 py-1.5 bg-[var(--bg)] rounded-full border border-[var(--border)] shadow-sm">Secure platform</span>
+          <span className="text-xs font-semibold px-4 py-1.5 bg-[var(--bg)] rounded-full border border-[var(--border)] shadow-sm">Community First</span>
+          <span className="text-xs font-semibold px-4 py-1.5 bg-[var(--bg)] rounded-full border border-[var(--border)] shadow-sm">Secure platform</span>
         </div>
       </div>
 
       {/* Interaction Right Side */}
       <div className="flex-1 flex flex-col items-center justify-center p-4 lg:p-12 relative">
-        <div className="absolute top-8 right-8 lg:hidden">
-          <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden border border-[var(--border)]">
-            <img src="/logo.png" alt="Sahaya" className="w-full h-full object-cover" />
+        <div className="w-full lg:hidden flex justify-center mb-8 absolute top-8">
+          <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden border border-[var(--border)] relative z-20">
+            <img src="/logo.png" alt="Sahaya" className="w-full h-full object-contain p-2" />
           </div>
         </div>
 
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           className="w-full relative z-10 flex flex-col items-center px-4"
         >
           <AnimatePresence mode="wait">
             {view === 'welcome' ? (
-              <motion.div 
+              <motion.div
                 key="welcome"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -171,7 +171,7 @@ export const LoginPage: React.FC = () => {
                   {/* CITIZEN ENTRY */}
                   <div className="space-y-3">
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)] px-1">Citizen Services</h3>
-                    <button 
+                    <button
                       onClick={() => { setAuthMode('login'); setView('auth'); }}
                       className="w-full group relative flex items-center justify-between bg-blue-500/5 border border-blue-500/20 p-5 rounded-[24px] transition-all hover:shadow-md hover:bg-blue-500/10 active:scale-[0.98]"
                     >
@@ -193,7 +193,7 @@ export const LoginPage: React.FC = () => {
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)] px-1">Operational Access</h3>
                     <div className="grid gap-3">
                       {/* Volunteer Sign In / Apply */}
-                      <button 
+                      <button
                         onClick={() => { setAuthMode('login'); setView('auth'); }}
                         className="w-full group relative flex items-center justify-between bg-[var(--surface)] border border-[var(--border)] p-5 rounded-[24px] transition-all hover:shadow-md hover:bg-[var(--hover)] active:scale-[0.98]"
                       >
@@ -209,7 +209,7 @@ export const LoginPage: React.FC = () => {
                         <LogIn className="w-5 h-5 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors" />
                       </button>
 
-                      <button 
+                      <button
                         onClick={() => setView('apply')}
                         className="w-full group relative flex items-center justify-between bg-[var(--text-primary)] border border-transparent text-[var(--text-inverse)] p-6 rounded-[24px] transition-all hover:opacity-90 active:scale-[0.98] shadow-sm"
                       >
@@ -230,7 +230,7 @@ export const LoginPage: React.FC = () => {
 
                 <div className="pt-4 flex items-center justify-center gap-2 border-t border-[var(--border)] pt-8">
                   <span className="text-[10px] uppercase font-bold text-[var(--text-secondary)] tracking-widest">Internal Control:</span>
-                  <button 
+                  <button
                     onClick={() => { setAuthMode('login'); setView('auth'); }}
                     className="text-[10px] uppercase font-black text-[var(--text-secondary)] hover:text-[var(--text-primary)] underline decoration-[var(--border)] underline-offset-4 transition-colors"
                   >
@@ -253,8 +253,8 @@ export const LoginPage: React.FC = () => {
                     {authMode === 'login' ? 'Sign In' : 'Create Account'}
                   </h2>
                   <p className="text-[var(--text-secondary)] text-sm font-medium">
-                    {authMode === 'login' 
-                      ? 'Enter your credentials to access the dashboard' 
+                    {authMode === 'login'
+                      ? 'Enter your credentials to access the dashboard'
                       : 'Fill in your details to create an account'}
                   </p>
                 </div>
@@ -356,7 +356,7 @@ export const LoginPage: React.FC = () => {
                   disabled={isLoggingIn}
                   className="w-full flex items-center justify-center gap-3 bg-[var(--surface)] border border-[var(--border)] py-4 rounded-2xl font-bold text-sm text-[var(--text-primary)] hover:bg-[var(--hover)] active:scale-95 disabled:opacity-50 transition-all shadow-sm"
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                  <svg className="w-5 h-5" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
                   Continue with Google
                 </button>
 
@@ -379,8 +379,8 @@ export const LoginPage: React.FC = () => {
 
             ) : (
               /* VOLUNTEER APPLICATION VIEW */
-              <VolunteerApplication 
-                onCancel={() => setView('welcome')} 
+              <VolunteerApplication
+                onCancel={() => setView('welcome')}
                 onAuthRequired={() => {
                   sessionStorage.setItem('post-login-redirect', 'volunteer-apply');
                   setView('auth');
@@ -389,13 +389,13 @@ export const LoginPage: React.FC = () => {
               />
             )}
           </AnimatePresence>
-
-          <div className="text-center pt-8">
-            <p className="text-[var(--text-secondary)] text-[10px] font-semibold tracking-wide">
-              Sahaya Foundation
-            </p>
-          </div>
         </motion.div>
+        
+        <div className="absolute bottom-6 left-0 right-0 text-center pointer-events-none">
+          <p className="text-[var(--text-secondary)] text-[10px] font-semibold tracking-wide">
+            Project Sahaya
+          </p>
+        </div>
       </div>
     </div>
   );

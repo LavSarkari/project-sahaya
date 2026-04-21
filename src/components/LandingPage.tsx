@@ -81,7 +81,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, theme })
             </h1>
             
             <p className="text-lg md:text-xl text-[var(--text-secondary)] max-w-lg leading-relaxed mb-4 font-medium">
-              A unified coordination platform that aggregates scattered community data from multiple NGOs and field operations — to fix <strong className="text-[var(--text-primary)]">misallocation</strong>, not scarcity.
+              A unified coordination platform that aggregates scattered community data from multiple NGOs and field operations - to fix <strong className="text-[var(--text-primary)]">misallocation</strong>, not scarcity.
             </p>
             <p className="text-sm text-[var(--text-secondary)]/80 max-w-lg leading-relaxed mb-10">
               Resources exist. The problem is they're invisible to the people who need them most. Sahaya gives coordinators the visibility to deploy the right help, to the right place, instantly.
@@ -128,7 +128,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, theme })
             </div>
           </motion.div>
 
-          {/* Right — Data Silo Visualization */}
+          {/* Right - Data Silo Visualization */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -199,25 +199,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, theme })
                 </h2>
                 <div className="space-y-6 text-lg text-[var(--text-secondary)] font-medium leading-relaxed">
                   <p>
-                    NGOs, social groups, and field teams collect valuable community data every day — food drive surveys, medical camp records, blood donation lists, disability program assessments. But this data is <strong className="text-[var(--text-primary)]">scattered across silos</strong>.
+                    NGOs, social groups, and field teams collect valuable community data every day - food drive surveys, medical camp records, blood donation lists, disability program assessments. But this data is <strong className="text-[var(--text-primary)]">scattered across silos</strong>.
                   </p>
                   <p>
-                    No one has the full picture. Volunteers go where they're told, not where they're needed. Resources pile up in one area while another suffers. The problem isn't that resources don't exist — <strong className="text-[var(--text-primary)]">it's that nobody can see them all at once.</strong>
+                    No one has the full picture. Volunteers go where they're told, not where they're needed. Resources pile up in one area while another suffers. The problem isn't that resources don't exist - <strong className="text-[var(--text-primary)]">it's that nobody can see them all at once.</strong>
                   </p>
                 </div>
 
                 {/* Before/After */}
                 <div className="mt-10 space-y-3">
                   <div className="flex items-center gap-3 text-sm">
-                    <span className="w-6 h-6 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 text-xs font-bold">✗</span>
+                    <span className="w-6 h-6 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 text-xs font-bold">�-</span>
                     <span className="text-[var(--text-secondary)]">Food Drive data → <span className="text-rose-400">trapped in spreadsheets</span></span>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
-                    <span className="w-6 h-6 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 text-xs font-bold">✗</span>
+                    <span className="w-6 h-6 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 text-xs font-bold">�-</span>
                     <span className="text-[var(--text-secondary)]">Medical Camp records → <span className="text-rose-400">different NGO database</span></span>
                   </div>
                   <div className="flex items-center gap-3 text-sm">
-                    <span className="w-6 h-6 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 text-xs font-bold">✗</span>
+                    <span className="w-6 h-6 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 text-xs font-bold">�-</span>
                     <span className="text-[var(--text-secondary)]">Field Reports → <span className="text-rose-400">lost in WhatsApp groups</span></span>
                   </div>
                   <div className="h-4" />
@@ -288,7 +288,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, theme })
         </div>
       </section>
 
-      {/* HOW IT WORKS — Platform Model */}
+      {/* HOW IT WORKS - Platform Model */}
       <section id="roles" className="relative z-10 py-24 bg-[var(--surface)] border-t border-b border-[var(--border)] transition-colors duration-500">
         <div className="max-w-[1400px] mx-auto px-6 md:px-12">
           <div className="mb-16 text-center max-w-2xl mx-auto">
@@ -297,7 +297,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, theme })
               One Platform. <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--accent)] to-emerald-500">Every Stakeholder.</span>
             </h2>
             <p className="text-lg text-[var(--text-secondary)] font-medium">
-              Sahaya isn't just for one NGO — it's the central coordination layer that sits above all organizations, giving each stakeholder exactly the access they need.
+              Sahaya isn't just for one NGO - it's the central coordination layer that sits above all organizations, giving each stakeholder exactly the access they need.
             </p>
           </div>
 
@@ -317,7 +317,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, theme })
               <div className="text-[9px] font-black text-[var(--accent)] uppercase tracking-[0.2em] mb-2">Administrator</div>
               <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-3 relative z-10">Command Center</h3>
               <p className="text-[var(--text-secondary)] text-sm font-medium leading-relaxed relative z-10 mb-6">
-                District coordinators and umbrella NGOs see the complete picture — every crisis, every volunteer, every sector. Run AI audits, execute redeployments, manage the entire network.
+                District coordinators and umbrella NGOs see the complete picture - every crisis, every volunteer, every sector. Run AI audits, execute redeployments, manage the entire network.
               </p>
               <div className="space-y-2">
                 {['Strategic Allocation Dashboard', 'Sector Health Matrix', 'AI-Powered Audit', 'One-Click Redeploy', 'Volunteer Vetting'].map(f => (
@@ -438,7 +438,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, theme })
               </div>
               <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Gemini AI Intelligence</h3>
               <p className="text-[var(--text-secondary)] text-sm font-medium leading-relaxed">
-                Every report is analyzed by Google Gemini — extracting category, priority, risk level, and confidence. Duplicates are auto-merged. Global audits generate strategic briefs.
+                Every report is analyzed by Google Gemini - extracting category, priority, risk level, and confidence. Duplicates are auto-merged. Global audits generate strategic briefs.
               </p>
             </div>
 
@@ -450,7 +450,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, theme })
                 </div>
                 <h3 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Multi-Source Data Aggregation</h3>
                 <p className="text-[var(--text-secondary)] font-medium max-w-xl">
-                  Break down data silos. Reports from food drives, medical camps, blood donations, disability programs, and NGO partners all flow into a single intelligence layer — tagged, categorized, and ready for allocation.
+                  Break down data silos. Reports from food drives, medical camps, blood donations, disability programs, and NGO partners all flow into a single intelligence layer - tagged, categorized, and ready for allocation.
                 </p>
               </div>
               <button onClick={onGetStarted} className="px-8 py-4 bg-[var(--text-primary)] text-[var(--text-inverse)] font-bold rounded-xl whitespace-nowrap hover:scale-105 transition-transform flex items-center gap-2 shadow-lg">
@@ -466,12 +466,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted, theme })
       <footer className="relative z-10 py-12 border-t border-[var(--border)] bg-[var(--surface)] transition-colors duration-500">
         <div className="max-w-[1400px] mx-auto px-6 md:px-12 flex flex-col md:flex-row items-center justify-between gap-4">
            <div>
-             <p className="text-xs font-bold text-[var(--text-secondary)]/50 uppercase tracking-widest">Sahaya v2.0 — Smart Resource Allocation</p>
+             <p className="text-xs font-bold text-[var(--text-secondary)]/50 uppercase tracking-widest">Sahaya v2.0 - Smart Resource Allocation</p>
              <p className="text-[10px] text-[var(--text-secondary)]/30 mt-1">Data-Driven Volunteer Coordination for Social Impact</p>
            </div>
            <div className="flex items-center gap-2 text-[var(--text-secondary)] bg-[var(--bg)] px-4 py-2 rounded-full border border-[var(--border)] shadow-sm">
              <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
-             <span className="text-[10px] font-bold uppercase tracking-wider">सहाया — Help</span>
+             <span className="text-[10px] font-bold uppercase tracking-wider">सहाया - Help</span>
            </div>
         </div>
       </footer>

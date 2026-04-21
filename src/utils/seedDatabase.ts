@@ -69,7 +69,7 @@ export async function runSeeder() {
   console.log("Starting seed...");
 
   try {
-    // Seed 50 volunteers (deterministic IDs — re-running overwrites, no duplicates)
+    // Seed 50 volunteers (deterministic IDs - re-running overwrites, no duplicates)
     const usersRef = collection(db, 'users');
     for (let i = 0; i < REALISTIC_ISSUES.length; i++) {
       const issue = REALISTIC_ISSUES[i];
@@ -95,7 +95,7 @@ export async function runSeeder() {
     }
     console.log("✅ All 50 volunteers seeded!");
 
-    // Seed 50 issues (deterministic IDs — re-running overwrites, no duplicates)
+    // Seed 50 issues (deterministic IDs - re-running overwrites, no duplicates)
     const issuesRef = collection(db, 'issues');
     for (let i = 0; i < REALISTIC_ISSUES.length; i++) {
       const is = REALISTIC_ISSUES[i];

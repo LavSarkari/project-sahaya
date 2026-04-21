@@ -10,6 +10,7 @@ import {
   computeAllocationStats 
 } from '../services/allocationService';
 import { auditGlobalAllocation } from '../services/aiService';
+import { NotificationService } from '../services/notificationService';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Brain, AlertTriangle, ArrowRightLeft, Shield, Activity, Target,
@@ -96,6 +97,10 @@ export const StrategicAllocation: React.FC = () => {
         status: 'en-route',
         activeTaskId: assignment.issueId
       });
+
+      // Dispatch Notifications
+      NotificationService.notifyAssignment(assignment.volunteerId, assignment.issueId);
+
     } catch (err) {
       console.error('Deploy failed:', err);
     }
@@ -311,7 +316,7 @@ export const StrategicAllocation: React.FC = () => {
                       </div>
                       <div>
                         <div className="text-[8px] font-black text-rose-500 uppercase tracking-widest">Critical Gap</div>
-                        <div className="text-xs font-bold text-[var(--text-primary)]">{alert.sectorName} — {alert.category}</div>
+                        <div className="text-xs font-bold text-[var(--text-primary)]">{alert.sectorName} - {alert.category}</div>
                       </div>
                     </div>
                     <div className="text-right">

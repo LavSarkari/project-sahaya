@@ -69,6 +69,12 @@ export interface UserProfile {
   address?: string;
   availability?: 'immediate' | 'scheduled' | 'on-call';
   emergencyContact?: string;
+  notificationPreferences?: {
+    email: boolean;
+    sms: boolean;
+    telegram: boolean;
+  };
+  telegramChatId?: string;
 }
 
 
@@ -78,13 +84,21 @@ export interface VolunteerApplication {
   email: string;
   skills: string[];
   bio: string;
-  idProofText: string;
+  idProofText?: string;
+  idProofUrl?: string;
+  profilePicUrl?: string;
   phone: string;
-  address: string;
+  homeAddress?: string;
+  serviceArea?: string;
+  workingHours?: string;
   availability: 'immediate' | 'scheduled' | 'on-call';
   emergencyContact?: string;
   status: 'pending' | 'approved' | 'rejected';
   timestamp: string;
+  aiVerification?: {
+    isHumanFace: boolean;
+    notes?: string;
+  };
 }
 
 

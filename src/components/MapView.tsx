@@ -453,7 +453,7 @@ export const MapView: React.FC<MapViewProps> = ({
                   : 'text-slate-500 hover:text-white hover:bg-white/5'
               }`}
             >
-              {layer === 'heatmap' ? '🔥' : layer === 'markers' ? '📍' : '◉'} {layer}
+              {layer === 'heatmap' ? '🔥' : layer === 'markers' ? '📍' : '�-�'} {layer}
             </button>
           ))}
         </div>
