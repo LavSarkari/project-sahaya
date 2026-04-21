@@ -42,6 +42,13 @@ due to fragmented data across NGOs, social groups, and field operations.*
 
 <div align="center">
 
+### Access Portal
+<img src="docs/screenshots/Landing.png" alt="Landing Page" width="900" />
+
+<sub>Premium, zero-trust authentication portal featuring dynamic glassy aesthetics and role-based access control</sub>
+
+<br/><br/>
+
 ### Tactical Command Center
 <img src="docs/screenshots/dashboard.png" alt="Dashboard" width="900" />
 
@@ -142,7 +149,7 @@ The beating heart of Sahaya. A pure-computation allocation service that:
 - **Global Audit** - Strategic natural-language assessment of the entire allocation landscape
 - **Smart Matching** - Context-aware volunteer-to-task matching based on skills, availability, and proximity
 
-### �-�️ Tactical Map & Heatmap
+### �-�️ Tactical Map & Heatmap
 - **Interactive map** with real-time issue markers, spatial clustering, and volunteer tracking
 - **Canvas-based heatmap** layer rendering demand density with radial gradients
 - **3-mode toggle** - Switch between Markers, Heatmap, or Both views
@@ -176,7 +183,7 @@ The beating heart of Sahaya. A pure-computation allocation service that:
 
 <br/>
 
-## �-️ Architecture
+## �-️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -185,7 +192,7 @@ The beating heart of Sahaya. A pure-computation allocation service that:
 │                                                                  │
 │  ┌──────────┐  ┌──────────────┐  ┌──────────────────────────┐  │
 │  │ Firebase  │  │ Gemini AI    │  │ Allocation Engine        │  │
-│  │ Firestore │�-�▶│ Signal Intel │�-�▶│ Sector Matrix            │  │
+│  │ Firestore │�-�▶│ Signal Intel │�-�▶│ Sector Matrix            │  │
 │  │ Auth      │  │ Global Audit │  │ Misallocation Detection  │  │
 │  │ Real-time │  │ Smart Match  │  │ N:M Optimal Assignment   │  │
 │  └──────────┘  └──────────────┘  │ Heatmap Generation       │  │
