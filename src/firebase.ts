@@ -3,14 +3,23 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
-// Import the Firebase configuration
-import firebaseConfig from '../firebase-applet-config.json';
+// Firebase configuration from environment variables
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+};
 
 // Initialize Firebase SDK
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore with the named database ID from config
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+// Initialize Firestore (default or named database)
+const dbId = import.meta.env.VITE_FIREBASE_DATABASE_ID || '(default)';
+export const db = getFirestore(app);
 
 // Initialize Auth
 export const auth = getAuth(app);
