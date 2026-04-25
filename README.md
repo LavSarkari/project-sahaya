@@ -133,15 +133,13 @@ NGO Partner Data ─────┘
 
 ## ✨ Features
 
-### 🎯 Smart Resource Allocation Engine
-The beating heart of Sahaya. A pure-computation allocation service that:
-- **Computes sector-level health** - Groups issues by region, calculates per-category demand, urgency scores, and health status (`critical` / `strained` / `balanced` / `surplus`)
-- **Detects 3 types of misallocation:**
-  - `CRITICAL_GAP` - Unassigned high-priority issues with no nearby volunteers
-  - `SKILL_MISMATCH` - Volunteers deployed outside their specialization
-  - `SURPLUS` - Over-allocated sectors that could redistribute resources
-- **N:M optimal matching** - Weighted greedy algorithm using Haversine distance, skill compatibility, and issue urgency
-- **One-click redeployment** - Admins can approve and execute suggested reallocations instantly
+### 🎯 A++ Smart Resource Allocation Engine
+The beating heart of Sahaya. A multi-pass computation allocation service that:
+- **6-Factor Scoring Formula** - Evaluates Proximity (25%) + Skill Tiers (30%) + Urgency (15%) + Availability (10%) + Fatigue (10%) + Track Record (10%).
+- **Two-Pass Matching Algorithm** - Pass 1 prioritizes exact skill matches; Pass 2 fills remaining gaps with the best available volunteers.
+- **Temporal Trend Detection** - Computes escalation alerts to detect dynamic sectors with rising signal rates.
+- **Issue Clustering** - Automatically groups same-category issues within a 10km radius for coordinated response.
+- **Fatigue Tracking** - Penalizes volunteers deployed >12h/day or within the last hour to prevent burnout.
 
 ### 🤖 Gemini AI Intelligence
 - **Signal Analysis** - Incoming reports are analyzed by Gemini to extract structured crisis data (category, priority, risk assessment, confidence score)
@@ -162,16 +160,19 @@ The beating heart of Sahaya. A pure-computation allocation service that:
 - **Admin control center** - Approve applications, assign tasks, manage the entire volunteer force
 - **Role-based access** - Admins, volunteers, and reporters each see only what they need
 
-### 📊 Multi-Source Data Aggregation
+### 📊 Multi-Source Data Pipeline
 - **6 data source types** - Field Report, Food Drive, Medical Camp, Blood Donation, Disability Program, NGO Partner
-- **Source tagging** on every report with visual badges in the issue feed
-- **Organization tracking** for NGO partner submissions
-- **AI signal fusion** - Multiple reports about the same crisis are automatically merged with accumulated impact data
+- **Batch Data Ingestion** - Imports CSVs and structured NGO JSON reports with automatic AI classification and normalization.
+- **AI signal fusion** - Multiple reports about the same crisis are automatically merged with accumulated impact data.
 
-### ⚙️ Autopilot Mode
-- **Manual Approval** (default) - All AI-suggested redeployments require admin sign-off
-- **Autopilot** - High-confidence suggestions (>85%) execute automatically; high-risk actions still require approval
-- Configurable in Settings → Allocation Mode (admin only)
+### ⚙️ Tactical Autopilot
+- **Manual Approval** (default) - All AI-suggested redeployments require admin sign-off.
+- **Functional Autopilot** - High-confidence assignments (score ≥ 0.65 + exact skill match) auto-deploy every 30 seconds.
+- Configurable in Settings → Allocation Mode (admin only).
+
+### 🔄 Closed-Loop Feedback & Audit
+- **Assignment Outcomes** - Records resolution time and effectiveness to compute ongoing volunteer performance scores.
+- **Immutable Audit Trail** - Every allocation, redeployment, and resolution action is securely logged in Firestore.
 
 ### 📦 Logistics Hub
 - Real-time inventory tracking across supply categories

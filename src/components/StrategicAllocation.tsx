@@ -1,22 +1,23 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { subscribeToIssues } from '../services/issueService';
 import { 
-  Issue, UserProfile, Category, SectorHealth, MisallocationAlert, OptimalAssignment 
+  Issue, UserProfile, Category, SectorHealth, MisallocationAlert, OptimalAssignment, EscalationAlert, IssueCluster, AllocationLogEntry
 } from '../types';
 import { 
   computeSectorMatrix, detectMisallocations, computeOptimalAssignments, 
-  computeAllocationStats 
+  computeAllocationStats, computeEscalationAlerts, clusterRelatedIssues
 } from '../services/allocationService';
 import { auditGlobalAllocation } from '../services/aiService';
 import { NotificationService } from '../services/notificationService';
+import { logAllocationAction } from '../services/feedbackService';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Brain, AlertTriangle, ArrowRightLeft, Shield, Activity, Target,
   Users, Zap, TrendingUp, ChevronRight, CheckCircle2, XCircle,
   MapPin, Sparkles, RefreshCw, ToggleLeft, ToggleRight, Clock,
-  Heart, Package, Droplets, ShieldCheck, BarChart3
+  Heart, Package, Droplets, ShieldCheck, BarChart3, Layers, History
 } from 'lucide-react';
 
 const CATEGORY_ICONS: Record<Category, React.ReactNode> = {
@@ -42,6 +43,8 @@ export const StrategicAllocation: React.FC = () => {
   const [isDeploying, setIsDeploying] = useState<string | null>(null);
   const [autopilot, setAutopilot] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [allocationLog, setAllocationLog] = useState<AllocationLogEntry[]>([]);
+  const autopilotRef = useRef(false);
 
   // Real-time data subscriptions
   useEffect(() => {
@@ -58,6 +61,9 @@ export const StrategicAllocation: React.FC = () => {
   const alerts = useMemo(() => detectMisallocations(sectorMatrix, volunteers), [sectorMatrix, volunteers]);
   const optimalAssignments = useMemo(() => computeOptimalAssignments(issues, volunteers), [issues, volunteers]);
   const stats = useMemo(() => computeAllocationStats(issues, volunteers, sectorMatrix), [issues, volunteers, sectorMatrix]);
+  // A++ temporal intelligence
+  const escalationAlerts = useMemo(() => computeEscalationAlerts(issues), [issues]);
+  const issueClusters = useMemo(() => clusterRelatedIssues(issues), [issues]);
 
   // AI Strategic Summary
   const runAudit = useCallback(async () => {
@@ -85,8 +91,8 @@ export const StrategicAllocation: React.FC = () => {
     }
   }, [issues.length, volunteers.length]);
 
-  // Deploy volunteer to issue
-  const handleDeploy = async (assignment: OptimalAssignment) => {
+  // Deploy volunteer to issue (with audit trail)
+  const handleDeploy = async (assignment: OptimalAssignment, triggeredBy: 'admin' | 'autopilot' = 'admin') => {
     setIsDeploying(assignment.issueId);
     try {
       await updateDoc(doc(db, 'issues', assignment.issueId), {
@@ -95,11 +101,27 @@ export const StrategicAllocation: React.FC = () => {
       });
       await updateDoc(doc(db, 'users', assignment.volunteerId), {
         status: 'en-route',
-        activeTaskId: assignment.issueId
+        activeTaskId: assignment.issueId,
+        lastDeployedAt: new Date().toISOString()
       });
 
-      // Dispatch Notifications
       NotificationService.notifyAssignment(assignment.volunteerId, assignment.issueId);
+
+      // A++ audit trail
+      const logEntry: AllocationLogEntry = {
+        id: `log-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        action: triggeredBy === 'autopilot' ? 'auto-assign' : 'assign',
+        issueId: assignment.issueId,
+        issueTitle: assignment.issueTitle,
+        volunteerId: assignment.volunteerId,
+        volunteerName: assignment.volunteerName,
+        matchScore: assignment.score,
+        reasoning: assignment.reasoning,
+        triggeredBy
+      };
+      setAllocationLog(prev => [logEntry, ...prev].slice(0, 50));
+      logAllocationAction(logEntry);
 
     } catch (err) {
       console.error('Deploy failed:', err);
@@ -113,6 +135,27 @@ export const StrategicAllocation: React.FC = () => {
       await handleDeploy(assignment);
     }
   };
+
+  // A++ REAL AUTOPILOT — auto-deploys high-confidence assignments every 30s
+  useEffect(() => {
+    autopilotRef.current = autopilot;
+  }, [autopilot]);
+
+  useEffect(() => {
+    if (!autopilot || optimalAssignments.length === 0) return;
+
+    const autoDeployInterval = setInterval(async () => {
+      if (!autopilotRef.current) return;
+      
+      const highConfidence = optimalAssignments.find(a => a.score >= 0.65 && a.skillMatch);
+      if (highConfidence) {
+        console.log(`[AUTOPILOT] Auto-deploying ${highConfidence.volunteerName} → ${highConfidence.issueTitle}`);
+        await handleDeploy(highConfidence, 'autopilot');
+      }
+    }, 30_000);
+
+    return () => clearInterval(autoDeployInterval);
+  }, [autopilot, optimalAssignments.length]);
 
   const criticalAlerts = alerts.filter(a => a.type === 'CRITICAL_GAP');
   const otherAlerts = alerts.filter(a => a.type !== 'CRITICAL_GAP');
@@ -470,6 +513,116 @@ export const StrategicAllocation: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* A++ ESCALATION ALERTS */}
+        {escalationAlerts.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-rose-500" />
+              <h2 className="text-xs font-black text-rose-500 uppercase tracking-[0.2em]">
+                Escalation Trends ({escalationAlerts.length})
+              </h2>
+            </div>
+            <div className="grid gap-3">
+              {escalationAlerts.map(alert => (
+                <motion.div
+                  key={alert.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="p-5 bg-rose-500/5 border border-rose-500/20 rounded-2xl space-y-3"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest ${
+                          alert.trendDirection === 'worsening' ? 'bg-rose-500/20 text-rose-500' : 'bg-amber-500/20 text-amber-500'
+                        }`}>
+                          {alert.trendDirection}
+                        </span>
+                        <span className="text-[10px] font-bold text-[var(--text-secondary)]">{alert.sectorName}</span>
+                      </div>
+                      <h4 className="text-sm font-bold text-[var(--text-primary)]">{alert.issueTitle}</h4>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-black text-rose-500">{alert.projectedEscalationHours}h</div>
+                      <div className="text-[8px] font-bold text-rose-400 uppercase">Until Critical</div>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">{alert.recommendation}</p>
+                  <div className="flex gap-4 text-[10px] font-bold text-[var(--text-secondary)]">
+                    <span>+{alert.signalDelta} signals/hr</span>
+                    <span>+{alert.affectedDelta} affected</span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* A++ ISSUE CLUSTERS */}
+        {issueClusters.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-indigo-500" />
+              <h2 className="text-xs font-black text-indigo-500 uppercase tracking-[0.2em]">
+                Coordinated Clusters ({issueClusters.length})
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {issueClusters.map(cluster => (
+                <div key={cluster.id} className="p-5 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold text-[var(--text-primary)]">{cluster.name}</h4>
+                    <span className="text-[10px] font-black text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded-full">
+                      {cluster.issueIds.length} issues
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">{cluster.coordinatedResponse}</p>
+                  <div className="flex gap-4 text-[10px] font-bold text-[var(--text-secondary)]">
+                    <span>{cluster.totalAffected.toLocaleString()} affected</span>
+                    <span>{cluster.radiusKm.toFixed(1)}km radius</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* A++ ALLOCATION HISTORY LOG */}
+        {allocationLog.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-[var(--text-secondary)]" />
+              <h2 className="text-xs font-black text-[var(--text-secondary)] uppercase tracking-[0.2em]">
+                Allocation Audit Trail
+              </h2>
+            </div>
+            <div className="bg-[var(--surface)] border border-[var(--border)] rounded-2xl overflow-hidden">
+              <div className="divide-y divide-[var(--border)] max-h-[300px] overflow-y-auto custom-scrollbar">
+                {allocationLog.map(entry => (
+                  <div key={entry.id} className="px-5 py-3 flex items-center justify-between hover:bg-[var(--hover)] transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${
+                        entry.action === 'auto-assign' ? 'bg-amber-500' : entry.action === 'resolve' ? 'bg-emerald-500' : 'bg-[var(--accent)]'
+                      }`} />
+                      <div>
+                        <div className="text-xs font-bold text-[var(--text-primary)]">
+                          {entry.volunteerName} → {entry.issueTitle?.slice(0, 40)}
+                        </div>
+                        <div className="text-[10px] text-[var(--text-secondary)]">
+                          {entry.action.toUpperCase()} • {entry.triggeredBy} • {entry.matchScore ? `${(entry.matchScore * 100).toFixed(0)}% match` : ''}
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-[var(--text-secondary)] font-mono">
+                      {new Date(entry.timestamp).toLocaleTimeString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,11 @@
 import { Issue, Area, ResponseTeam } from './types';
 
+/**
+ * DEFAULT_AREAS — Fallback sector definitions for Lucknow.
+ * The A++ allocation engine in allocationService.ts auto-discovers
+ * additional sectors dynamically from issue data coordinates.
+ * These serve as the baseline known sectors.
+ */
 export const AREAS: Area[] = [
   { id: 'aliganj', name: 'Aliganj', status: 'red', activeIssues: 12 },
   { id: 'gomti-nagar', name: 'Gomti Nagar', status: 'yellow', activeIssues: 5 },

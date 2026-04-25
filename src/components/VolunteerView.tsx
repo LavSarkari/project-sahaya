@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { recordOutcome } from '../services/feedbackService';
 
 export const VolunteerView: React.FC = () => {
   const { user, profile } = useAuth();
@@ -38,24 +39,40 @@ export const VolunteerView: React.FC = () => {
       const docRef = doc(db, 'issues', issueId);
       const updateData: any = { status: newStatus };
       
-      // If accepting a task, assign it exclusively to this user
       if (newStatus === 'in-progress') {
         updateData.assignedTo = user.uid;
       }
       
       await updateDoc(docRef, updateData);
       
-      // Update user status
       const userRef = doc(db, 'users', user.uid);
       if (newStatus === 'resolved') {
-        await updateDoc(userRef, { 
-          status: 'standby',
-          activeTaskId: null 
-        });
+        // A++ Feedback loop: compute resolution time and record outcome
+        const task = allTasks.find(t => t.id === issueId);
+        const assignedTime = task?.timestamp ? new Date(task.timestamp).getTime() : Date.now() - 3600000;
+        const resolutionMinutes = Math.round((Date.now() - assignedTime) / 60000);
+
+        try {
+          await recordOutcome(issueId, user.uid, profile?.name || 'Unknown', {
+            effective: true,
+            resolutionMinutes,
+            resolvedBy: user.uid,
+            resolvedAt: new Date().toISOString(),
+            notes: `Resolved by field volunteer in ${resolutionMinutes} minutes`
+          });
+        } catch (feedbackErr) {
+          console.error('Feedback recording failed (non-blocking):', feedbackErr);
+          // Still update status even if feedback fails
+          await updateDoc(userRef, { 
+            status: 'standby',
+            activeTaskId: null 
+          });
+        }
       } else if (newStatus === 'in-progress') {
         await updateDoc(userRef, { 
           status: 'active',
-          activeTaskId: issueId
+          activeTaskId: issueId,
+          lastDeployedAt: new Date().toISOString()
         });
       }
 

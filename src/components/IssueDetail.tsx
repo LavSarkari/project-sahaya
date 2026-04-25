@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Brain, ShieldAlert, Clock, Map, Navigation, Info, ExternalLink, MapPin, CheckCircle2, Activity, Filter, Wrench, Sparkles, UserCheck, X, FileText, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
-import { Issue } from '../types';
+import { Issue, CATEGORY_SKILL_MAP } from '../types';
 import { generateRecommendation, analyzeTacticalDepth, matchVolunteerToTask } from '../services/aiService';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
@@ -11,13 +11,20 @@ import { NotificationService } from '../services/notificationService';
 
 const ALL_SKILLS = ['medical', 'logistics', 'search and rescue', 'communications', 'food distribution'];
 
-const CATEGORY_SKILL_MAP: Record<string, string> = {
-  'MEDICAL': 'medical',
-  'FOOD': 'food distribution',
-  'WATER': 'logistics',
-  'SHELTER': 'logistics',
-  'SECURITY': 'search and rescue'
-};
+// Use the shared tiered skill map — get primary skill for filtering
+function getPrimarySkillForCategory(category: string): string {
+  const mappings = CATEGORY_SKILL_MAP[category as keyof typeof CATEGORY_SKILL_MAP];
+  if (!mappings) return '';
+  const exact = mappings.find(m => m.tier === 'exact');
+  return exact?.skill || mappings[0]?.skill || '';
+}
+
+// Get ALL relevant skills for a category (all tiers)
+function getAllSkillsForCategory(category: string): string[] {
+  const mappings = CATEGORY_SKILL_MAP[category as keyof typeof CATEGORY_SKILL_MAP];
+  if (!mappings) return [];
+  return mappings.map(m => m.skill);
+}
 
 interface IssueDetailProps {
   issue: Issue | null;
@@ -100,8 +107,11 @@ export const IssueDetail: React.FC<IssueDetailProps> = ({ issue }) => {
     }
   }, [issue?.id, volunteers.length, profile?.uid]);
 
-  const targetSkill = issue ? CATEGORY_SKILL_MAP[issue.category] : '';
-  const recommendedVolunteers = targetSkill ? volunteers.filter(v => v.skills?.includes(targetSkill) || v.uid === issue?.assignedTo) : volunteers.filter(v => v.uid === issue?.assignedTo);
+  const targetSkill = issue ? getPrimarySkillForCategory(issue.category) : '';
+  const allRelevantSkills = issue ? getAllSkillsForCategory(issue.category) : [];
+  const recommendedVolunteers = allRelevantSkills.length > 0 
+    ? volunteers.filter(v => v.skills?.some(s => allRelevantSkills.includes(s)) || v.uid === issue?.assignedTo) 
+    : volunteers.filter(v => v.uid === issue?.assignedTo);
   const assignedVolunteer = volunteers.find(v => v.uid === issue?.assignedTo);
 
   const handleDeploy = async (volunteerId: string) => {

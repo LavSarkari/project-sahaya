@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, MapPin, Send, AlertCircle, CheckCircle2, Loader2, Users, Activity, Tag } from 'lucide-react';
+import { Camera, MapPin, Send, AlertCircle, CheckCircle2, Loader2, Users, Activity, Tag, Upload, FileText, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 import { analyzeSignal, StructuredSignal } from '../services/aiService';
 import { submitReport } from '../services/issueService';
 import { getNearestArea } from '../lib/utils';
 import { AREAS } from '../constants';
+import { ingestCSVBatch, generateCSVTemplate } from '../services/ingestionService';
 
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -14,7 +15,8 @@ import { Issue } from '../types';
 import type { DataSource } from '../types';
 
 export const ReportIssue: React.FC = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
   const [description, setDescription] = useState('');
   const [peopleAffected, setPeopleAffected] = useState<string>('');
   const [location, setLocation] = useState<{ lat: number, lng: number } | null>(null);
@@ -28,6 +30,10 @@ export const ReportIssue: React.FC = () => {
   const [recentReports, setRecentReports] = useState<Issue[]>([]);
   const [dataSource, setDataSource] = useState<DataSource>('field_report');
   const [sourceOrg, setSourceOrg] = useState('');
+  // A++ CSV Batch Import state
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [csvResult, setCsvResult] = useState<{ total: number; success: number; failed: number; merged: number; errors: string[] } | null>(null);
+  const [showBatchImport, setShowBatchImport] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -344,6 +350,86 @@ export const ReportIssue: React.FC = () => {
                     placeholder="e.g. Red Cross, Doctors Without Borders..."
                     className="w-full bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-3.5 text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/30 focus:outline-none focus:border-[var(--accent)] transition-all text-sm"
                   />
+                </div>
+              )}
+
+              {/* A++ CSV BATCH IMPORT — Admin Only */}
+              {isAdmin && (
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowBatchImport(!showBatchImport)}
+                    className="flex items-center gap-2 text-[11px] font-bold text-indigo-500 uppercase tracking-widest px-2 hover:text-indigo-400 transition-colors"
+                  >
+                    <Upload className="w-3 h-3" />
+                    {showBatchImport ? 'Hide' : 'Show'} Batch Import (Admin)
+                  </button>
+
+                  {showBatchImport && (
+                    <div className="p-5 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-indigo-500" />
+                          CSV Batch Import
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const csv = generateCSVTemplate();
+                            const blob = new Blob([csv], { type: 'text/csv' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'sahaya_import_template.csv';
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          }}
+                          className="flex items-center gap-1 text-[10px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors"
+                        >
+                          <Download className="w-3 h-3" /> Template
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-[var(--text-secondary)]">
+                        Upload a CSV with columns: title, location, lat, lng, category, priority, peopleAffected, description, sourceOrg
+                      </p>
+                      <input
+                        type="file"
+                        accept=".csv"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setCsvImporting(true);
+                          setCsvResult(null);
+                          try {
+                            const text = await file.text();
+                            const result = await ingestCSVBatch(text, recentReports, true);
+                            setCsvResult(result);
+                          } catch (err: any) {
+                            setCsvResult({ total: 0, success: 0, failed: 1, merged: 0, errors: [err.message] });
+                          }
+                          setCsvImporting(false);
+                        }}
+                        className="w-full text-sm text-[var(--text-secondary)] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:uppercase file:tracking-wider file:bg-indigo-500/10 file:text-indigo-500 hover:file:bg-indigo-500/20 transition-all"
+                      />
+                      {csvImporting && (
+                        <div className="flex items-center gap-2 text-indigo-500 text-xs">
+                          <Loader2 className="w-3 h-3 animate-spin" /> Processing CSV...
+                        </div>
+                      )}
+                      {csvResult && (
+                        <div className={`p-3 rounded-xl text-xs space-y-1 ${csvResult.failed > 0 ? 'bg-rose-500/10 border border-rose-500/20' : 'bg-emerald-500/10 border border-emerald-500/20'}`}>
+                          <div className="font-bold text-[var(--text-primary)]">
+                            {csvResult.success}/{csvResult.total} imported • {csvResult.merged} merged • {csvResult.failed} failed
+                          </div>
+                          {csvResult.errors.length > 0 && (
+                            <div className="text-rose-400 text-[10px]">
+                              {csvResult.errors.slice(0, 3).map((e, i) => <div key={i}>{e}</div>)}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
