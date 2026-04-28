@@ -49,7 +49,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() &&
-        (request.auth.token.email.lower() in ["luv.sarkari@gmail.com", "annoyinglav@gmail.com"] ||
+        (request.auth.token.email.lower() in ["luv.sarkari@gmail.com", "annoyinglav@gmail.com", "vishwakarmarishabh2004@gmail.com"] ||
          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'));
     }
